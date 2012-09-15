@@ -1,0 +1,26 @@
+{
+  "name": "monexp",
+  "version": "0.0.0",
+  "description": "Reusable webapp parts for Express with MongoDB.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "dependencies": {
+    "MD5": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/countable/monexp.git"
+  },
+  "keywords": [
+    "mongodb",
+    "express",
+    "authentication",
+    "users"
+  ],
+  "author": {
+    "name": "Clark Van Oyen"
+  },
+  "license": "BSD"
+}

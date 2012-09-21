@@ -5,7 +5,7 @@ Reusable webapp parts for Express with MongoDB.
 
 Usage:
 
-```javascript
+```coffeescript
 
 express = require 'express'
 mongolian = require 'mongolian'
@@ -19,3 +19,5 @@ db = server.db "mrblisted"
 monexp.users.init app, db
 
 ```
+
+

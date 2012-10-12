@@ -16,7 +16,7 @@ server = new mongolian
 db = server.db "mrblisted"
 
 # The users module
-monexp.users.init app, db
+require('monexp').users.init app, db
 
 ```
 

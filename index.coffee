@@ -3,8 +3,10 @@ md5 = require 'MD5'
 uuid = require 'ndoe-uuid'
 
 module.exports.users=
-  init:(app, db)->
     
+  init:(opts)->
+    app = opts.app
+    db = opts.db
     Users = db.collection 'users'
     
     # Forward a request based on "then" hints in it.

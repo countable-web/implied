@@ -3,7 +3,7 @@
 
   md5 = require('MD5');
 
-  uuid = require('ndoe-uuid');
+  uuid = require('node-uuid');
 
   module.exports.users = {
     init: function(opts) {

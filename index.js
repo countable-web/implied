@@ -8,10 +8,21 @@
 
   module.exports.users = {
     init: function(opts) {
-      var Users, app, db, goto_next, server_path;
+      var Users, app, db, goto_next, server_path, statics;
       app = opts.app;
       db = opts.db;
       Users = db.collection('users');
+      statics = function(arr) {
+        return arr.forEach(function(item) {
+          console.log(item);
+          return app.get('/' + item, function(req, res) {
+            return res.render(item, {
+              req: req
+            });
+          });
+        });
+      };
+      statics(['signup', 'login', 'reset-password-confirm', 'reset-password-submit']);
       goto_next = function(req, res) {
         return res.redirect(req.query.then || req.body.then || '/');
       };
@@ -40,11 +51,6 @@
           req.flash("success", "You've been safely logged out");
         }
         return goto_next(req, res);
-      });
-      app.get("/signup", function(req, res) {
-        return res.render('signup', {
-          req: req
-        });
       });
       app.post("/signup", function(req, res) {
         if (req.body.email && req.body.password) {
@@ -96,11 +102,14 @@
                 password_reset_token: token
               }
             });
-            send_mail({
-              to: user.email,
-              subject: "Password Reset",
-              body: "Go here to reset your password: http://" + req.host + "/reset-password-confirm?token=" + token
-            });
+            if (typeof opts.mailer === "function") {
+              opts.mailer({
+                to: user.email,
+                subject: "Password Reset",
+                body: "Go here to reset your password: http://" + opts.host + "/reset-password-confirm?token=" + token
+              });
+            }
+            console.log('sent');
             if (typeof req.flash === "function") {
               req.flash("message", "You've been sent an email with instructions on resetting your password.");
             }
@@ -110,13 +119,7 @@
           }
         });
       });
-      app.get("/reset-password", function(req, res) {
-        return res.render('reset-password', {
-          token: req.query.token,
-          req: req
-        });
-      });
-      return app.post("/reset-password", function(req, res) {
+      return app.post("/reset-password-confirm", function(req, res) {
         var query;
         if (req.session.email) {
           query = {
@@ -127,8 +130,18 @@
             password_reset_token: req.query.token
           };
         }
-        Users.update(query, function(err, user) {});
-        return goto_next(req, res);
+        return Users.update(query, {
+          $set: {
+            password: req.body.password
+          }
+        }, function(err, user) {
+          if (err) {
+            req.flash('error', 'Password reset failed');
+          } else {
+            req.flash('success', 'Password was reset');
+          }
+          return goto_next(req, res);
+        });
       });
     }
   };

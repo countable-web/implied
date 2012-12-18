@@ -85,3 +85,178 @@ module.exports.users=
       Users.update query, (err, user) ->
       goto_next req, res
 
+module.exports.blog=
+    
+  init:(opts)->
+    opts.login_url ?= "/login"
+
+    app = opts.app
+    db = opts.db
+
+    console.log "I need help!!!!!!"
+
+    staff = (req, res, next) ->
+      if req.session.email
+        db.collection('users').findOne {email:req.session.email, admin:true}, (err, user)->
+          if user
+            next()
+          else
+            req.flash?('Not authorized.')
+            res.redirect opts.login_url + "?then=" + req.path
+      else
+        req.flash?('Not authorized.')
+        res.redirect opts.login_url + "?then=" + req.path
+
+    app.get "/blog", (req, res) ->
+      console.log "Please Talk to me!"
+      db.collection('blog').find({public_visible: 'checked'}).sort({pub_date : -1}).limit(3).toArray (err, entries) ->
+        res.render 'blog-entries',
+          req: req
+          email: req.session.email
+          entries: entries
+
+    app.get "/blog/:id", (req,res) ->
+      db.collection('blog').find({public_visible: 'checked'}, {title:1, image:1}).sort({pub_date : -1}).limit(3).toArray (err, entries) ->
+        db.collection('blog').findOne {_id: req.params.id}, (err, rec)->
+          console.log err if err
+
+          res.render "blog-entry",
+            req: req
+            entries: entries
+            email: req.session.email
+            rec: rec
+
+    app.get "/admin/add-blog", staff, (req, res) ->
+      res.render "admin/blog-add",
+        req: req
+        rec: {}
+        email: req.session.email
+
+    app.post "/admin/add-blog", staff, (req, res)->
+      req.body.content = req.body.content.replace /\r\n/g, '<br>'
+      if req.body.slug_field and req.body.slug_field.length
+        req.body._id = req.body.slug_field
+      else
+        obj_id = new ObjectId()
+        req.body._id = obj_id.toString(16)
+
+      if req.files.image
+        req.body.image = req.files.image.name
+        fs.readFile req.files.image.path, (err, data) ->
+          newPath = opts.upload_dir + "site/blog/" + req.files.image.name
+          fs.writeFile newPath, data
+
+      db.collection("blog").insert req.body, (err, entry)->
+        if err then console.error err
+        res.redirect '/admin/blog'
+
+    app.get "/admin/blog", staff, (req, res) ->
+      db.collection('blog').find().toArray (err, entries)->
+        res.render "admin/blog-list",
+          req: req
+          email: req.session.email
+          entries: entries
+    
+    app.get "/admin/blog/:id", staff, (req, res) ->
+      db.collection('blog').findOne {_id: req.params.id}, (err, rec) ->
+        res.render "admin/blog-add",
+          title: req.params.collection
+          req: req
+          form: FORMS['blog']
+          email: req.session.email
+          rec: rec
+
+    app.post "/admin/blog/:id", staff, (req, res) ->
+      obj_id = {_id: req.params.id}
+      req.body.content = req.body.content.replace /\r\n/g, '<br>'
+      console.log 'IMG', req.files.image
+      console.log req.files.image.size > 0
+
+      if req.files.image and req.files.image.size > 0
+        req.body.image = req.files.image.name
+        fs.readFile req.files.image.path, (err, data) ->
+          newPath = opts.upload_dir + "site/blog/" + req.files.image.name
+          fs.writeFile newPath, data
+
+      db.collection('blog').update {_id: req.params.id}, {$set: req.body}, false, (err) ->
+        if err then return res.send {success:false, error: err}
+        res.redirect '/admin/blog'
+    
+    app.get "/admin/blog/:id/delete", staff, (req, res) ->
+      db.collection('blog').remove {_id: req.params.id}, (err, rec) ->
+        res.redirect "/admin/blog"
+
+    FORMS = 
+      pages:
+        print: 'paths'
+        fields: [
+            name:'title'
+          ,
+            name:'path'
+          ,
+            name:'content'
+            type:'textarea'
+          ,
+            name:'meta'
+        ]
+
+      blog:
+        print: 'paths'
+        fields: [
+            name: 'pub_date'
+          ,
+            name: 'name'
+          ,
+            name: 'title'
+          ,
+            name: 'content'
+            type: 'textarea'
+          ,
+            name: 'teaser'
+          ,
+            name: 'slug_field'
+        ]
+
+module.exports.admin=
+  init:(opts)->
+    app = opts.app
+    db = opts.db
+    forms = opts.forms or {}
+
+    staff = (req, res, next) ->
+      if req.session.email
+        db.collection('users').findOne {email:req.session.email, admin:true}, (err, user)->
+          if user
+            next()
+          else
+            req.flash?('Not authorized.')
+            res.redirect opts.login_url + "?then=" + req.path
+      else
+        req.flash?('Not authorized.')
+        res.redirect opts.login_url + "?then=" + req.path
+    
+    app.get "/admin", staff, (req,res) ->
+      res.render 'admin/admin',
+        req:req
+
+    app.get "/admin/:collection", staff, (req,res) ->
+      db.collection(req.params.collection).find().toArray (err, records)->
+        res.render "admin-list",
+          title: req.params.collection
+          form: forms[req.params.collection]
+          req: req
+          email: req.session.email
+          records: records
+
+    app.get "/admin/:collection/:id", staff, (req,res) ->
+      db.collection(req.params.collection).findOne {_id: new ObjectId(req.params.id)}, (err, rec)->
+        res.render "admin-object",
+          title: req.params.collection
+          req: req
+          form: forms[req.params.collection]
+          email: req.session.email
+          rec: rec
+
+    app.post "/admin/:collection/:id", staff, (req,res) ->
+      db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
+        res.redirect '/admin/'+req.params.collection

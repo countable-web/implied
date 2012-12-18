@@ -141,7 +141,6 @@
       }
       app = opts.app;
       db = opts.db;
-      console.log("I need help!!!!!!");
       staff = function(req, res, next) {
         if (req.session.email) {
           return db.collection('users').findOne({
@@ -165,7 +164,6 @@
         }
       };
       app.get("/blog", function(req, res) {
-        console.log("Please Talk to me!");
         return db.collection('blog').find({
           public_visible: 'checked'
         }).sort({

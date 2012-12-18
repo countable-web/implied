@@ -93,8 +93,6 @@ module.exports.blog=
     app = opts.app
     db = opts.db
 
-    console.log "I need help!!!!!!"
-
     staff = (req, res, next) ->
       if req.session.email
         db.collection('users').findOne {email:req.session.email, admin:true}, (err, user)->
@@ -108,7 +106,6 @@ module.exports.blog=
         res.redirect opts.login_url + "?then=" + req.path
 
     app.get "/blog", (req, res) ->
-      console.log "Please Talk to me!"
       db.collection('blog').find({public_visible: 'checked'}).sort({pub_date : -1}).limit(3).toArray (err, entries) ->
         res.render 'blog-entries',
           req: req

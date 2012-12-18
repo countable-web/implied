@@ -146,4 +146,269 @@
     }
   };
 
+  module.exports.blog = {
+    init: function(opts) {
+      var FORMS, app, db, staff, _ref;
+      if ((_ref = opts.login_url) == null) {
+        opts.login_url = "/login";
+      }
+      app = opts.app;
+      db = opts.db;
+      staff = function(req, res, next) {
+        if (req.session.email) {
+          return db.collection('users').findOne({
+            email: req.session.email,
+            admin: true
+          }, function(err, user) {
+            if (user) {
+              return next();
+            } else {
+              if (typeof req.flash === "function") {
+                req.flash('Not authorized.');
+              }
+              return res.redirect(opts.login_url + "?then=" + req.path);
+            }
+          });
+        } else {
+          if (typeof req.flash === "function") {
+            req.flash('Not authorized.');
+          }
+          return res.redirect(opts.login_url + "?then=" + req.path);
+        }
+      };
+      app.get("/blog", function(req, res) {
+        return db.collection('blog').find({
+          public_visible: 'checked'
+        }).sort({
+          pub_date: -1
+        }).limit(3).toArray(function(err, entries) {
+          return res.render('blog-entries', {
+            req: req,
+            email: req.session.email,
+            entries: entries
+          });
+        });
+      });
+      app.get("/blog/:id", function(req, res) {
+        return db.collection('blog').find({
+          public_visible: 'checked'
+        }, {
+          title: 1,
+          image: 1
+        }).sort({
+          pub_date: -1
+        }).limit(3).toArray(function(err, entries) {
+          return db.collection('blog').findOne({
+            _id: req.params.id
+          }, function(err, rec) {
+            if (err) {
+              console.log(err);
+            }
+            return res.render("blog-entry", {
+              req: req,
+              entries: entries,
+              email: req.session.email,
+              rec: rec
+            });
+          });
+        });
+      });
+      app.get("/admin/add-blog", staff, function(req, res) {
+        return res.render("admin/blog-add", {
+          req: req,
+          rec: {},
+          email: req.session.email
+        });
+      });
+      app.post("/admin/add-blog", staff, function(req, res) {
+        var obj_id;
+        req.body.content = req.body.content.replace(/\r\n/g, '<br>');
+        if (req.body.slug_field && req.body.slug_field.length) {
+          req.body._id = req.body.slug_field;
+        } else {
+          obj_id = new ObjectId();
+          req.body._id = obj_id.toString(16);
+        }
+        if (req.files.image) {
+          req.body.image = req.files.image.name;
+          fs.readFile(req.files.image.path, function(err, data) {
+            var newPath;
+            newPath = opts.upload_dir + "site/blog/" + req.files.image.name;
+            return fs.writeFile(newPath, data);
+          });
+        }
+        return db.collection("blog").insert(req.body, function(err, entry) {
+          if (err) {
+            console.error(err);
+          }
+          return res.redirect('/admin/blog');
+        });
+      });
+      app.get("/admin/blog", staff, function(req, res) {
+        return db.collection('blog').find().toArray(function(err, entries) {
+          return res.render("admin/blog-list", {
+            req: req,
+            email: req.session.email,
+            entries: entries
+          });
+        });
+      });
+      app.get("/admin/blog/:id", staff, function(req, res) {
+        return db.collection('blog').findOne({
+          _id: req.params.id
+        }, function(err, rec) {
+          return res.render("admin/blog-add", {
+            title: req.params.collection,
+            req: req,
+            form: FORMS['blog'],
+            email: req.session.email,
+            rec: rec
+          });
+        });
+      });
+      app.post("/admin/blog/:id", staff, function(req, res) {
+        var obj_id;
+        obj_id = {
+          _id: req.params.id
+        };
+        req.body.content = req.body.content.replace(/\r\n/g, '<br>');
+        console.log('IMG', req.files.image);
+        console.log(req.files.image.size > 0);
+        if (req.files.image && req.files.image.size > 0) {
+          req.body.image = req.files.image.name;
+          fs.readFile(req.files.image.path, function(err, data) {
+            var newPath;
+            newPath = opts.upload_dir + "site/blog/" + req.files.image.name;
+            return fs.writeFile(newPath, data);
+          });
+        }
+        return db.collection('blog').update({
+          _id: req.params.id
+        }, {
+          $set: req.body
+        }, false, function(err) {
+          if (err) {
+            return res.send({
+              success: false,
+              error: err
+            });
+          }
+          return res.redirect('/admin/blog');
+        });
+      });
+      app.get("/admin/blog/:id/delete", staff, function(req, res) {
+        return db.collection('blog').remove({
+          _id: req.params.id
+        }, function(err, rec) {
+          return res.redirect("/admin/blog");
+        });
+      });
+      return FORMS = {
+        pages: {
+          print: 'paths',
+          fields: [
+            {
+              name: 'title'
+            }, {
+              name: 'path'
+            }, {
+              name: 'content',
+              type: 'textarea'
+            }, {
+              name: 'meta'
+            }
+          ]
+        },
+        blog: {
+          print: 'paths',
+          fields: [
+            {
+              name: 'pub_date'
+            }, {
+              name: 'name'
+            }, {
+              name: 'title'
+            }, {
+              name: 'content',
+              type: 'textarea'
+            }, {
+              name: 'teaser'
+            }, {
+              name: 'slug_field'
+            }
+          ]
+        }
+      };
+    }
+  };
+
+  module.exports.admin = {
+    init: function(opts) {
+      var app, db, forms, staff;
+      app = opts.app;
+      db = opts.db;
+      forms = opts.forms || {};
+      staff = function(req, res, next) {
+        if (req.session.email) {
+          return db.collection('users').findOne({
+            email: req.session.email,
+            admin: true
+          }, function(err, user) {
+            if (user) {
+              return next();
+            } else {
+              if (typeof req.flash === "function") {
+                req.flash('Not authorized.');
+              }
+              return res.redirect(opts.login_url + "?then=" + req.path);
+            }
+          });
+        } else {
+          if (typeof req.flash === "function") {
+            req.flash('Not authorized.');
+          }
+          return res.redirect(opts.login_url + "?then=" + req.path);
+        }
+      };
+      app.get("/admin", staff, function(req, res) {
+        return res.render('admin/admin', {
+          req: req
+        });
+      });
+      app.get("/admin/:collection", staff, function(req, res) {
+        return db.collection(req.params.collection).find().toArray(function(err, records) {
+          return res.render("admin-list", {
+            title: req.params.collection,
+            form: forms[req.params.collection],
+            req: req,
+            email: req.session.email,
+            records: records
+          });
+        });
+      });
+      app.get("/admin/:collection/:id", staff, function(req, res) {
+        return db.collection(req.params.collection).findOne({
+          _id: new ObjectId(req.params.id)
+        }, function(err, rec) {
+          return res.render("admin-object", {
+            title: req.params.collection,
+            req: req,
+            form: forms[req.params.collection],
+            email: req.session.email,
+            rec: rec
+          });
+        });
+      });
+      return app.post("/admin/:collection/:id", staff, function(req, res) {
+        return db.collection(req.params.collection).update({
+          _id: new ObjectId(req.params.id)
+        }, {
+          $set: req.body
+        }, function(err) {
+          return res.redirect('/admin/' + req.params.collection);
+        });
+      });
+    }
+  };
+
 }).call(this);

@@ -1,6 +1,7 @@
 # Express Mongo Users
 md5 = require 'MD5'
 uuid = require 'node-uuid'
+fs = require 'fs'
 
 module.exports.users=
     
@@ -90,13 +91,14 @@ module.exports.users=
           req.flash 'success', 'Password was reset'
         goto_next req, res
 
-module.exports.blog=
+module.exports.admin=
     
   init:(opts)->
     opts.login_url ?= "/login"
 
     app = opts.app
     db = opts.db
+    forms = opts.forms or {}
 
     staff = (req, res, next) ->
       if req.session.email
@@ -127,6 +129,11 @@ module.exports.blog=
             entries: entries
             email: req.session.email
             rec: rec
+
+    app.get "/admin", staff, (req,res) ->
+      res.render 'admin/admin',
+        req:req
+        email: req.session.email
 
     app.get "/admin/add-blog", staff, (req, res) ->
       res.render "admin/blog-add",
@@ -188,6 +195,29 @@ module.exports.blog=
       db.collection('blog').remove {_id: req.params.id}, (err, rec) ->
         res.redirect "/admin/blog"
 
+    app.get "/admin/:collection", staff, (req,res) ->
+      db.collection(req.params.collection).find().toArray (err, records)->
+        res.render "admin-list",
+          title: req.params.collection
+          form: forms[req.params.collection]
+          req: req
+          email: req.session.email
+          records: records
+
+    app.get "/admin/:collection/:id", staff, (req,res) ->
+      db.collection(req.params.collection).findOne {_id: new ObjectId(req.params.id)}, (err, rec)->
+        res.render "admin-object",
+          title: req.params.collection
+          req: req
+          form: forms[req.params.collection]
+          email: req.session.email
+          rec: rec
+
+    app.post "/admin/:collection/:id", staff, (req,res) ->
+      db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
+        res.redirect '/admin/'+req.params.collection
+
+
     FORMS = 
       pages:
         print: 'paths'
@@ -219,46 +249,3 @@ module.exports.blog=
             name: 'slug_field'
         ]
 
-module.exports.admin=
-  init:(opts)->
-    app = opts.app
-    db = opts.db
-    forms = opts.forms or {}
-
-    staff = (req, res, next) ->
-      if req.session.email
-        db.collection('users').findOne {email:req.session.email, admin:true}, (err, user)->
-          if user
-            next()
-          else
-            req.flash?('Not authorized.')
-            res.redirect opts.login_url + "?then=" + req.path
-      else
-        req.flash?('Not authorized.')
-        res.redirect opts.login_url + "?then=" + req.path
-    
-    app.get "/admin", staff, (req,res) ->
-      res.render 'admin/admin',
-        req:req
-
-    app.get "/admin/:collection", staff, (req,res) ->
-      db.collection(req.params.collection).find().toArray (err, records)->
-        res.render "admin-list",
-          title: req.params.collection
-          form: forms[req.params.collection]
-          req: req
-          email: req.session.email
-          records: records
-
-    app.get "/admin/:collection/:id", staff, (req,res) ->
-      db.collection(req.params.collection).findOne {_id: new ObjectId(req.params.id)}, (err, rec)->
-        res.render "admin-object",
-          title: req.params.collection
-          req: req
-          form: forms[req.params.collection]
-          email: req.session.email
-          rec: rec
-
-    app.post "/admin/:collection/:id", staff, (req,res) ->
-      db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
-        res.redirect '/admin/'+req.params.collection

@@ -5,6 +5,8 @@ uuid = require 'node-uuid'
 module.exports.users=
     
   init:(opts)->
+    
+    opts.salt ?= 'secret-the-cat'
 
     app = opts.app
     db = opts.db
@@ -12,7 +14,6 @@ module.exports.users=
     
     statics = (arr) ->
       arr.forEach (item)->
-        console.log item
         app.get '/'+item, (req,res)->
           res.render item,
             req: req
@@ -25,7 +26,13 @@ module.exports.users=
 
     # Log in
     app.post "/login", (req,res) ->
-      Users.findOne {email:req.body.email, password:req.body.password}, (err, user)->
+      Users.findOne
+        email:req.body.email
+        $or: [
+          {password: req.body.password}
+          {password: md5(req.body.password + opts.salt)}
+        ]
+      , (err, user)->
         if user
           req.session.email = user.email
           req.flash?("success", "You've been logged in.")
@@ -41,6 +48,7 @@ module.exports.users=
 
     app.post "/signup", (req,res) ->
       if req.body.email and req.body.password
+        req.body.password = md5(req.body.password + opts.salt)
         # Check if user exists.
         Users.find({email: req.body.email}).toArray (err, users)->
           if users.length is 0

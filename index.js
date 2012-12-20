@@ -1,19 +1,18 @@
 (function() {
   var md5, uuid;
-
   md5 = require('MD5');
-
   uuid = require('node-uuid');
-
   module.exports.users = {
     init: function(opts) {
-      var Users, app, db, goto_next, server_path, statics;
+      var Users, app, db, goto_next, server_path, statics, _ref;
+      if ((_ref = opts.salt) == null) {
+        opts.salt = 'secret-the-cat';
+      }
       app = opts.app;
       db = opts.db;
       Users = db.collection('users');
       statics = function(arr) {
         return arr.forEach(function(item) {
-          console.log(item);
           return app.get('/' + item, function(req, res) {
             return res.render(item, {
               req: req
@@ -28,7 +27,13 @@
       app.post("/login", function(req, res) {
         return Users.findOne({
           email: req.body.email,
-          password: req.body.password
+          $or: [
+            {
+              password: req.body.password
+            }, {
+              password: md5(req.body.password + opts.salt)
+            }
+          ]
         }, function(err, user) {
           if (user) {
             req.session.email = user.email;
@@ -53,6 +58,7 @@
       });
       app.post("/signup", function(req, res) {
         if (req.body.email && req.body.password) {
+          req.body.password = md5(req.body.password + opts.salt);
           return Users.find({
             email: req.body.email
           }).toArray(function(err, users) {
@@ -82,7 +88,9 @@
       server_path = function(req) {
         var url;
         url = req.protocol + "://" + req.host;
-        if (req.port && req.port !== 80) url += ":" + req.port;
+        if (req.port && req.port !== 80) {
+          url += ":" + req.port;
+        }
         return url;
       };
       app.post("/reset-password-submit", function(req, res) {
@@ -142,5 +150,4 @@
       });
     }
   };
-
 }).call(this);

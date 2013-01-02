@@ -31,11 +31,11 @@ module.exports = (opts)->
 
   app.get "/blog", (req, res) ->
     filter =
-      public_visible: 'checked'
+      public_visible: 'on'
     if req.query.category
       filter.category = req.query.category
     pagenum = 1*(req.query.page or 1)
-    db.collection('blog').find({public_visible: 'checked'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
+    db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
         res.render 'blog-entries',
           req: req
@@ -46,7 +46,7 @@ module.exports = (opts)->
           blog_has_next_page: blog_articles.length > PAGE_SIZE
 
   app.get "/blog/:id", (req,res) ->
-    db.collection('blog').find({public_visible: 'checked'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
+    db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').findOne {_id: req.params.id}, (err, entry)->
         console.log err if err
 

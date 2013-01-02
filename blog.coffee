@@ -59,26 +59,8 @@ module.exports = (opts)->
   app.get "/admin/add-blog", staff, (req, res) ->
     res.render "admin/blog-add",
       req: req
-      entry: {}
+      rec: {}
       email: req.session.email
-
-  app.post "/admin/add-blog", staff, (req, res)->
-    req.body.content = req.body.content.replace /\r\n/g, '<br>'
-    if req.body.slug_field and req.body.slug_field.length
-      req.body._id = req.body.slug_field
-    else
-      obj_id = new ObjectId()
-      req.body._id = obj_id.toString(16)
-
-    if req.files.image
-      req.body.image = req.files.image.name
-      fs.readFile req.files.image.path, (err, data) ->
-        newPath = opts.upload_dir + "site/blog/" + req.files.image.name
-        fs.writeFile newPath, data
-
-    db.collection("blog").insert req.body, (err, entry)->
-      if err then console.error err
-      res.redirect '/admin/blog'
 
   app.get "/blog-action/subscribe", (req, res)->
     if req.query.email
@@ -106,9 +88,11 @@ module.exports = (opts)->
         email: req.session.email
         rec: rec
 
-  app.post "/admin/blog/:id", staff, (req, res) ->
+  process_save = (req)->
     obj_id = {_id: req.params.id}
     req.body.content = req.body.content.replace /\r\n/g, '<br>'
+    if req.body.slug_field and req.body.slug_field.length
+      req.body._id = req.body.slug_field
 
     if req.files.image and req.files.image.size > 0
       req.body.image = req.files.image.name
@@ -116,10 +100,24 @@ module.exports = (opts)->
         newPath = opts.upload_dir + "site/blog/" + req.files.image.name
         fs.writeFile newPath, data
 
+    
+  app.post "/admin/blog/:id", staff, (req, res) ->
+    process_save req
     db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
       if err then return res.send {success:false, error: err}
       res.redirect '/admin/blog'
-  
+
+  app.post "/admin/add-blog", staff, (req, res)->
+    process_save req
+    
+    if not req.body.slug_field
+      obj_id = new ObjectId()
+      req.body._id = obj_id.toString(16)
+
+    db.collection("blog").insert req.body, (err, entry)->
+      if err then console.error err
+      res.redirect '/admin/blog'
+
   app.get "/admin/blog/:id/delete", staff, (req, res) ->
     db.collection('blog').remove {_id: req.params.id}, (err, rec) ->
       res.redirect "/admin/blog"

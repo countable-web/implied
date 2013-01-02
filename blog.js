@@ -3,7 +3,7 @@
   $ = require('jquery');
   fs = require('fs');
   module.exports = function(opts) {
-    var FORMS, NUM_PREVIEWS, PAGE_SIZE, app, common, db, staff;
+    var FORMS, NUM_PREVIEWS, PAGE_SIZE, app, common, db, process_save, staff;
     common = require("./common")(opts);
     staff = common.staff;
     app = opts.app;
@@ -94,32 +94,8 @@
     app.get("/admin/add-blog", staff, function(req, res) {
       return res.render("admin/blog-add", {
         req: req,
-        entry: {},
+        rec: {},
         email: req.session.email
-      });
-    });
-    app.post("/admin/add-blog", staff, function(req, res) {
-      var obj_id;
-      req.body.content = req.body.content.replace(/\r\n/g, '<br>');
-      if (req.body.slug_field && req.body.slug_field.length) {
-        req.body._id = req.body.slug_field;
-      } else {
-        obj_id = new ObjectId();
-        req.body._id = obj_id.toString(16);
-      }
-      if (req.files.image) {
-        req.body.image = req.files.image.name;
-        fs.readFile(req.files.image.path, function(err, data) {
-          var newPath;
-          newPath = opts.upload_dir + "site/blog/" + req.files.image.name;
-          return fs.writeFile(newPath, data);
-        });
-      }
-      return db.collection("blog").insert(req.body, function(err, entry) {
-        if (err) {
-          console.error(err);
-        }
-        return res.redirect('/admin/blog');
       });
     });
     app.get("/blog-action/subscribe", function(req, res) {
@@ -141,6 +117,16 @@
     });
     app.get("/admin/blog", staff, function(req, res) {
       return db.collection('blog').find().toArray(function(err, entries) {
+        var entry;
+        console.log((function() {
+          var _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = entries.length; _i < _len; _i++) {
+            entry = entries[_i];
+            _results.push(entry.title);
+          }
+          return _results;
+        })());
         return res.render("admin/blog-list", {
           req: req,
           email: req.session.email,
@@ -161,20 +147,26 @@
         });
       });
     });
-    app.post("/admin/blog/:id", staff, function(req, res) {
+    process_save = function(req) {
       var obj_id;
       obj_id = {
         _id: req.params.id
       };
       req.body.content = req.body.content.replace(/\r\n/g, '<br>');
+      if (req.body.slug_field && req.body.slug_field.length) {
+        req.body._id = req.body.slug_field;
+      }
       if (req.files.image && req.files.image.size > 0) {
         req.body.image = req.files.image.name;
-        fs.readFile(req.files.image.path, function(err, data) {
+        return fs.readFile(req.files.image.path, function(err, data) {
           var newPath;
           newPath = opts.upload_dir + "site/blog/" + req.files.image.name;
           return fs.writeFile(newPath, data);
         });
       }
+    };
+    app.post("/admin/blog/:id", staff, function(req, res) {
+      process_save(req);
       return db.collection('blog').update({
         _id: req.params.id
       }, req.body, false, function(err) {
@@ -183,6 +175,20 @@
             success: false,
             error: err
           });
+        }
+        return res.redirect('/admin/blog');
+      });
+    });
+    app.post("/admin/add-blog", staff, function(req, res) {
+      var obj_id;
+      process_save(req);
+      if (!req.body.slug_field) {
+        obj_id = new ObjectId();
+        req.body._id = obj_id.toString(16);
+      }
+      return db.collection("blog").insert(req.body, function(err, entry) {
+        if (err) {
+          console.error(err);
         }
         return res.redirect('/admin/blog');
       });

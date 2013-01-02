@@ -85,7 +85,7 @@ module.exports = (opts)->
       subscriber=
         blog: true
         email: req.query.email
-      console.log subscriber
+
       db.collection("subscribers").update subscriber, subscriber, true, (err, entry)->
         if err then console.error err
         res.send {success: true}
@@ -116,7 +116,7 @@ module.exports = (opts)->
         newPath = opts.upload_dir + "site/blog/" + req.files.image.name
         fs.writeFile newPath, data
 
-    db.collection('blog').update {_id: req.params.id}, {$set: req.body}, false, (err) ->
+    db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
       if err then return res.send {success:false, error: err}
       res.redirect '/admin/blog'
   

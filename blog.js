@@ -129,7 +129,6 @@
           blog: true,
           email: req.query.email
         };
-        console.log(subscriber);
         return db.collection("subscribers").update(subscriber, subscriber, true, function(err, entry) {
           if (err) {
             console.error(err);
@@ -178,9 +177,7 @@
       }
       return db.collection('blog').update({
         _id: req.params.id
-      }, {
-        $set: req.body
-      }, false, function(err) {
+      }, req.body, false, function(err) {
         if (err) {
           return res.send({
             success: false,

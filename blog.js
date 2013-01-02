@@ -77,7 +77,13 @@
         pub_date: -1
       }).limit(NUM_PREVIEWS).toArray(function(err, blog_teasers) {
         return db.collection('blog').findOne({
-          _id: req.params.id
+          $or: [
+            {
+              _id: req.params.id
+            }, {
+              slug_field: req.params.id
+            }
+          ]
         }, function(err, entry) {
           if (err) {
             console.log(err);
@@ -89,13 +95,6 @@
             entry: entry
           });
         });
-      });
-    });
-    app.get("/admin/add-blog", staff, function(req, res) {
-      return res.render("admin/blog-add", {
-        req: req,
-        rec: {},
-        email: req.session.email
       });
     });
     app.get("/blog-action/subscribe", function(req, res) {
@@ -124,9 +123,22 @@
         });
       });
     });
+    app.get("/admin/add-blog", staff, function(req, res) {
+      return res.render("admin/blog-add", {
+        req: req,
+        rec: {},
+        email: req.session.email
+      });
+    });
     app.get("/admin/blog/:id", staff, function(req, res) {
       return db.collection('blog').findOne({
-        _id: req.params.id
+        $or: [
+          {
+            _id: req.params.id
+          }, {
+            slug_field: req.params.id
+          }
+        ]
       }, function(err, rec) {
         return res.render("admin/blog-add", {
           title: req.params.collection,
@@ -138,14 +150,7 @@
       });
     });
     process_save = function(req) {
-      var obj_id;
-      obj_id = {
-        _id: req.params.id
-      };
       req.body.content = req.body.content.replace(/\r\n/g, '<br>');
-      if (req.body.slug_field && req.body.slug_field.length) {
-        req.body._id = req.body.slug_field;
-      }
       if (req.files.image && req.files.image.size > 0) {
         req.body.image = req.files.image.name;
         return fs.readFile(req.files.image.path, function(err, data) {
@@ -159,7 +164,9 @@
       process_save(req);
       return db.collection('blog').update({
         _id: req.params.id
-      }, req.body, false, function(err) {
+      }, {
+        $set: req.body
+      }, false, function(err) {
         if (err) {
           return res.send({
             success: false,
@@ -170,17 +177,37 @@
       });
     });
     app.post("/admin/add-blog", staff, function(req, res) {
-      var obj_id;
+      var fail, obj_id;
       process_save(req);
+      obj_id = {
+        _id: req.params.id
+      };
+      fail = function(msg) {
+        req.flash(msg);
+        return res.render("admin/blog-add", {
+          req: req,
+          rec: {},
+          email: req.session.email
+        });
+      };
       if (!req.body.slug_field) {
-        obj_id = new ObjectId();
-        req.body._id = obj_id.toString(16);
+        return fail('Slug is required.');
+      } else {
+        req.body._id = req.body.slug_field;
       }
-      return db.collection("blog").insert(req.body, function(err, entry) {
-        if (err) {
-          console.error(err);
+      return db.collection('blog').findOne({
+        _id: req.body._id
+      }, function(err, entry) {
+        if (entry) {
+          return fail('Slug is already used.');
+        } else {
+          return db.collection("blog").insert(req.body, function(err, entry) {
+            if (err) {
+              console.error(err);
+            }
+            return res.redirect('/admin/blog');
+          });
         }
-        return res.redirect('/admin/blog');
       });
     });
     return app.get("/admin/blog/:id/delete", staff, function(req, res) {

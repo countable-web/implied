@@ -47,20 +47,13 @@ module.exports = (opts)->
 
   app.get "/blog/:id", (req,res) ->
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
-      db.collection('blog').findOne {_id: req.params.id}, (err, entry)->
+      db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
         console.log err if err
-
         res.render "blog-entry",
           req: req
           blog_teasers: blog_teasers
           email: req.session.email
           entry: entry
-
-  app.get "/admin/add-blog", staff, (req, res) ->
-    res.render "admin/blog-add",
-      req: req
-      rec: {}
-      email: req.session.email
 
   app.get "/blog-action/subscribe", (req, res)->
     if req.query.email
@@ -78,9 +71,15 @@ module.exports = (opts)->
         req: req
         email: req.session.email
         entries: entries
+
+  app.get "/admin/add-blog", staff, (req, res) ->
+    res.render "admin/blog-add",
+      req: req
+      rec: {}
+      email: req.session.email
   
   app.get "/admin/blog/:id", staff, (req, res) ->
-    db.collection('blog').findOne {_id: req.params.id}, (err, rec) ->
+    db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, rec) ->
       res.render "admin/blog-add",
         title: req.params.collection
         req: req
@@ -89,10 +88,7 @@ module.exports = (opts)->
         rec: rec
 
   process_save = (req)->
-    obj_id = {_id: req.params.id}
     req.body.content = req.body.content.replace /\r\n/g, '<br>'
-    if req.body.slug_field and req.body.slug_field.length
-      req.body._id = req.body.slug_field
 
     if req.files.image and req.files.image.size > 0
       req.body.image = req.files.image.name
@@ -103,20 +99,35 @@ module.exports = (opts)->
     
   app.post "/admin/blog/:id", staff, (req, res) ->
     process_save req
-    db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
+    
+    db.collection('blog').update {_id: req.params.id}, {$set: req.body}, false, (err) ->
       if err then return res.send {success:false, error: err}
       res.redirect '/admin/blog'
 
   app.post "/admin/add-blog", staff, (req, res)->
     process_save req
     
+    obj_id = {_id: req.params.id}
+    
+    fail = (msg)->
+      req.flash msg
+      res.render "admin/blog-add",
+        req: req
+        rec: {}
+        email: req.session.email
+      
     if not req.body.slug_field
-      obj_id = new ObjectId()
-      req.body._id = obj_id.toString(16)
+      return fail 'Slug is required.'
+    else
+      req.body._id = req.body.slug_field
 
-    db.collection("blog").insert req.body, (err, entry)->
-      if err then console.error err
-      res.redirect '/admin/blog'
+    db.collection('blog').findOne {_id: req.body._id}, (err, entry)->
+      if entry
+        return fail 'Slug is already used.'
+      else
+        db.collection("blog").insert req.body, (err, entry)->
+          if err then console.error err
+          res.redirect '/admin/blog'
 
   app.get "/admin/blog/:id/delete", staff, (req, res) ->
     db.collection('blog').remove {_id: req.params.id}, (err, rec) ->

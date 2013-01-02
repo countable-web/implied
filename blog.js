@@ -34,14 +34,14 @@
     app.get("/blog", function(req, res) {
       var filter, pagenum;
       filter = {
-        public_visible: 'checked'
+        public_visible: 'on'
       };
       if (req.query.category) {
         filter.category = req.query.category;
       }
       pagenum = 1 * (req.query.page || 1);
       return db.collection('blog').find({
-        public_visible: 'checked'
+        public_visible: 'on'
       }, {
         title: 1,
         image: 1
@@ -69,7 +69,7 @@
     });
     app.get("/blog/:id", function(req, res) {
       return db.collection('blog').find({
-        public_visible: 'checked'
+        public_visible: 'on'
       }, {
         title: 1,
         image: 1
@@ -117,16 +117,6 @@
     });
     app.get("/admin/blog", staff, function(req, res) {
       return db.collection('blog').find().toArray(function(err, entries) {
-        var entry;
-        console.log((function() {
-          var _i, _len, _results;
-          _results = [];
-          for (_i = 0, _len = entries.length; _i < _len; _i++) {
-            entry = entries[_i];
-            _results.push(entry.title);
-          }
-          return _results;
-        })());
         return res.render("admin/blog-list", {
           req: req,
           email: req.session.email,

@@ -26,6 +26,11 @@ users = (opts)->
       res.redirect req.query.then or req.body.then or '/'
 
     # Log in
+    # HTTP API:
+    # @param then - page to redirect to on success.
+    # @param onerror - page to redirect to on failure.
+    # @param email - user to log in.
+    # @param password - the user's password.
     app.post "/login", (req,res) ->
       Users.findOne
         email:req.body.email
@@ -40,7 +45,7 @@ users = (opts)->
           goto_next req, res
         else
           req.flash?("error", "Email or password incorrect.")
-          res.redirect req.path
+          res.redirect req.body.onerror or req.path
 
     app.get "/logout", (req, res) ->
       req.session.email = null

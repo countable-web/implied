@@ -66,6 +66,14 @@ module.exports = (opts)->
       email: req.session.email
       images: ""
 
+  app.get "/admin/blog-image-edit/:photo", staff, (req, res) ->
+    res.render "admin/blog-image-edit",
+      req: req
+      rec: {}
+      email: req.session.email
+      image: req.params.photo
+
+
   app.get "/blog-action/subscribe", (req, res)->
     if req.query.email
       subscriber=
@@ -94,73 +102,60 @@ module.exports = (opts)->
 
 
   process_save = (req)->
-    save_img = (img)->
+    filePath = opts.upload_dir + "site/blog/"
+
+    crop_img = (img_name, img_height, img_width)->
+      thumbPath = filePath + 'thumb_' + img_name
+      newPath = filePath + img_name
+      cal_dim = (w, h)->
+        ratio = 1.31645569620253
+        width = 0
+        height = 0
+        if w / h < ratio
+          width = parseInt(w, 10)
+          height = parseInt(w / ratio, 10)
+        else
+          height = parseInt h, 10
+          width = parseInt h * ratio, 10
+        return width + "x" + height
+
+      common_lib.syscall 'convert ' + newPath + ' -gravity center -crop ' + cal_dim(img_width, img_height) + '+0+0 ' + thumbPath
+
+    save_img = (img, crop, img_height, img_width)->
       fs.readFile img.path, (err, data) ->
         newPath = filePath + img.name
-        fs.writeFile newPath, data
+        fs.writeFile newPath, data, (err)->
+          if crop
+            crop_img(img.name, img_height, img_width)
 
     obj_id = {_id: req.params.id}
     req.body.content = req.body.content.replace /\r\n/g, '<br>'
     if req.body.slug_field and req.body.slug_field.length
       req.body._id = req.body.slug_field
 
-    if req.body.image_1_pos is '1'
-      req.body.image_1_pos = ''
-    else if req.body.image_2_pos is '1'
-      req.body.image_2_pos = ''
-    else if req.body.image_3_pos is '1'
-      req.body.image_3_pos = ''
-    else if req.body.image_4_pos is '1'
-      req.body.image_4_pos = ''
-    else if req.body.image_5_pos is '1'
-      req.body.image_5_pos = ''
-    else if req.body.image_6_pos is '1'
-      req.body.image_6_pos = ''
+    for index in [1, 2, 3, 4, 5, 6]
+      image_pos = 'image_' + index + '_pos'
 
-    console.log "these are my blog images ", req.body
-    console.log "these are my files ", req.files
+      if req.body[image_pos] is '1'
+        req.body[image_pos] = ''
 
-    unless req.body.image_1_pos is 'undefined'
-      unless req.files.image.size is 0
-        req.body["image" + req.body.image_1_pos] = req.files.image.name 
-      else 
-        console.log "Setting image 1 to: ", req.body.image
-        req.body["image" + req.body.image_1_pos] = req.body.prev_image
-    unless req.body.image_2_pos is 'undefined'
-      unless req.files.image2.size is 0
-        req.body["image" + req.body.image_2_pos] = req.files.image2.name
-      else 
-        req.body["image" + req.body.image_2_pos] = req.body.prev_image2
-    unless req.body.image_3_pos is 'undefined'
-      unless req.files.image3.size is 0
-        req.body["image" + req.body.image_3_pos] = req.files.image3.name
-      else 
-        req.body["image" + req.body.image_3_pos] = req.body.prev_image3
-    unless req.body.image_4_pos is 'undefined'
-      unless req.files.image4.size is 0
-        req.body["image" + req.body.image_4_pos] = req.files.image4.name
-      else 
-        req.body["image" + req.body.image_4_pos] = req.body.prev_image4
-    unless req.body.image_5_pos is 'undefined'
-      unless req.files.image5.size is 0
-        req.body["image" + req.body.image_5_pos] = req.files.image5.name
-      else 
-        req.body["image" + req.body.image_5_pos] = req.body.prev_image5
-    unless req.body.image_6_pos is 'undefined'
-      unless req.files.image6.size is 0
-        req.body["image" + req.body.image_6_pos] = req.files.image6.name
-      else
-        console.log "Setting image 6 to: ", req.body.image6
-        req.body["image" + req.body.image_6_pos] = req.body.prev_image6
+      image = "image" + req.body[image_pos]
 
-    filePath = opts.upload_dir + "site/blog/"
+      unless req.body[image_pos] is 'undefined'
+        unless req.files[image].size is 0
+          req.body[image] = req.files[image].name
+        else 
+          req.body[image] = req.body.prev_image
+          if req.body['crop_' + index]
+            crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image])
+
     common_lib.syscall 'mkdir -p ' + filePath, ->
-      save_img(req.files.image)
-      save_img(req.files.image2)
-      save_img(req.files.image3)
-      save_img(req.files.image4)
-      save_img(req.files.image5)
-      save_img(req.files.image6)
+      save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image)
+      save_img(req.files.image2, req.body.crop_2, req.body.height_image2, req.body.width_image2)
+      save_img(req.files.image3, req.body.crop_3, req.body.height_image3, req.body.width_image3)
+      save_img(req.files.image4, req.body.crop_4, req.body.height_image4, req.body.width_image4)
+      save_img(req.files.image5, req.body.crop_5, req.body.height_image5, req.body.width_image5)
+      save_img(req.files.image6, req.body.crop_6, req.body.height_image6, req.body.width_image6)
 
     
   app.post "/admin/blog/:id", staff, (req, res) ->

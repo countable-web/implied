@@ -105,6 +105,14 @@
         images: ""
       });
     });
+    app.get("/admin/blog-image-edit/:photo", staff, function(req, res) {
+      return res.render("admin/blog-image-edit", {
+        req: req,
+        rec: {},
+        email: req.session.email,
+        image: req.params.photo
+      });
+    });
     app.get("/blog-action/subscribe", function(req, res) {
       var subscriber;
       if (req.query.email) {
@@ -145,12 +153,37 @@
       });
     });
     process_save = function(req) {
-      var filePath, obj_id, save_img;
-      save_img = function(img) {
+      var crop_img, filePath, image, image_pos, index, obj_id, save_img, _i, _len, _ref;
+      filePath = opts.upload_dir + "site/blog/";
+      crop_img = function(img_name, img_height, img_width) {
+        var cal_dim, newPath, thumbPath;
+        thumbPath = filePath + 'thumb_' + img_name;
+        newPath = filePath + img_name;
+        cal_dim = function(w, h) {
+          var height, ratio, width;
+          ratio = 1.31645569620253;
+          width = 0;
+          height = 0;
+          if (w / h < ratio) {
+            width = parseInt(w, 10);
+            height = parseInt(w / ratio, 10);
+          } else {
+            height = parseInt(h, 10);
+            width = parseInt(h * ratio, 10);
+          }
+          return width + "x" + height;
+        };
+        return common_lib.syscall('convert ' + newPath + ' -gravity center -crop ' + cal_dim(img_width, img_height) + '+0+0 ' + thumbPath);
+      };
+      save_img = function(img, crop, img_height, img_width) {
         return fs.readFile(img.path, function(err, data) {
           var newPath;
           newPath = filePath + img.name;
-          return fs.writeFile(newPath, data);
+          return fs.writeFile(newPath, data, function(err) {
+            if (crop) {
+              return crop_img(img.name, img_height, img_width);
+            }
+          });
         });
       };
       obj_id = {
@@ -160,73 +193,32 @@
       if (req.body.slug_field && req.body.slug_field.length) {
         req.body._id = req.body.slug_field;
       }
-      if (req.body.image_1_pos === '1') {
-        req.body.image_1_pos = '';
-      } else if (req.body.image_2_pos === '1') {
-        req.body.image_2_pos = '';
-      } else if (req.body.image_3_pos === '1') {
-        req.body.image_3_pos = '';
-      } else if (req.body.image_4_pos === '1') {
-        req.body.image_4_pos = '';
-      } else if (req.body.image_5_pos === '1') {
-        req.body.image_5_pos = '';
-      } else if (req.body.image_6_pos === '1') {
-        req.body.image_6_pos = '';
-      }
-      console.log("these are my blog images ", req.body);
-      console.log("these are my files ", req.files);
-      if (req.body.image_1_pos !== 'undefined') {
-        if (req.files.image.size !== 0) {
-          req.body["image" + req.body.image_1_pos] = req.files.image.name;
-        } else {
-          console.log("Setting image 1 to: ", req.body.image);
-          req.body["image" + req.body.image_1_pos] = req.body.prev_image;
+      _ref = [1, 2, 3, 4, 5, 6];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        index = _ref[_i];
+        image_pos = 'image_' + index + '_pos';
+        if (req.body[image_pos] === '1') {
+          req.body[image_pos] = '';
+        }
+        image = "image" + req.body[image_pos];
+        if (req.body[image_pos] !== 'undefined') {
+          if (req.files[image].size !== 0) {
+            req.body[image] = req.files[image].name;
+          } else {
+            req.body[image] = req.body.prev_image;
+            if (req.body['crop_' + index]) {
+              crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image]);
+            }
+          }
         }
       }
-      if (req.body.image_2_pos !== 'undefined') {
-        if (req.files.image2.size !== 0) {
-          req.body["image" + req.body.image_2_pos] = req.files.image2.name;
-        } else {
-          req.body["image" + req.body.image_2_pos] = req.body.prev_image2;
-        }
-      }
-      if (req.body.image_3_pos !== 'undefined') {
-        if (req.files.image3.size !== 0) {
-          req.body["image" + req.body.image_3_pos] = req.files.image3.name;
-        } else {
-          req.body["image" + req.body.image_3_pos] = req.body.prev_image3;
-        }
-      }
-      if (req.body.image_4_pos !== 'undefined') {
-        if (req.files.image4.size !== 0) {
-          req.body["image" + req.body.image_4_pos] = req.files.image4.name;
-        } else {
-          req.body["image" + req.body.image_4_pos] = req.body.prev_image4;
-        }
-      }
-      if (req.body.image_5_pos !== 'undefined') {
-        if (req.files.image5.size !== 0) {
-          req.body["image" + req.body.image_5_pos] = req.files.image5.name;
-        } else {
-          req.body["image" + req.body.image_5_pos] = req.body.prev_image5;
-        }
-      }
-      if (req.body.image_6_pos !== 'undefined') {
-        if (req.files.image6.size !== 0) {
-          req.body["image" + req.body.image_6_pos] = req.files.image6.name;
-        } else {
-          console.log("Setting image 6 to: ", req.body.image6);
-          req.body["image" + req.body.image_6_pos] = req.body.prev_image6;
-        }
-      }
-      filePath = opts.upload_dir + "site/blog/";
       return common_lib.syscall('mkdir -p ' + filePath, function() {
-        save_img(req.files.image);
-        save_img(req.files.image2);
-        save_img(req.files.image3);
-        save_img(req.files.image4);
-        save_img(req.files.image5);
-        return save_img(req.files.image6);
+        save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image);
+        save_img(req.files.image2, req.body.crop_2, req.body.height_image2, req.body.width_image2);
+        save_img(req.files.image3, req.body.crop_3, req.body.height_image3, req.body.width_image3);
+        save_img(req.files.image4, req.body.crop_4, req.body.height_image4, req.body.width_image4);
+        save_img(req.files.image5, req.body.crop_5, req.body.height_image5, req.body.width_image5);
+        return save_img(req.files.image6, req.body.crop_6, req.body.height_image6, req.body.width_image6);
       });
     };
     app.post("/admin/blog/:id", staff, function(req, res) {

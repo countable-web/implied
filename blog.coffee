@@ -147,18 +147,17 @@ module.exports = (opts)->
         else 
           req.body[image] = req.body.prev_image
           if req.body['crop_' + index]
-            console.log "We did it! ", req.body[image]
+            console.log "We did it! ", req.body.prev_image
             console.log "the height! ", req.body['height_' + image]
             console.log "the width! ", req.body['width_' + image]
-            crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image])
+            crop_img(req.body.prev_image, req.body['height_' + image], req.body['width_' + image])
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
-      save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image)
-      save_img(req.files.image2, req.body.crop_2, req.body.height_image2, req.body.width_image2)
-      save_img(req.files.image3, req.body.crop_3, req.body.height_image3, req.body.width_image3)
-      save_img(req.files.image4, req.body.crop_4, req.body.height_image4, req.body.width_image4)
-      save_img(req.files.image5, req.body.crop_5, req.body.height_image5, req.body.width_image5)
-      save_img(req.files.image6, req.body.crop_6, req.body.height_image6, req.body.width_image6)
+      unless req.files.image.size is 0
+        save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image)
+      for idx in [2, 3, 4, 5, 6]
+        unless req.files["image" + idx].size is 0
+          save_img(req.files["image" + idx], req.body["crop_" + idx], req.body["height_image" + idx], req.body["width_image" + idx])
 
     
   app.post "/admin/blog/:id", staff, (req, res) ->

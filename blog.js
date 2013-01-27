@@ -201,12 +201,15 @@
           req.body[image_pos] = '';
         }
         image = "image" + req.body[image_pos];
-        if (req.body[image_pos] !== 'undefined') {
+        if (!(req.body[image_pos] === 'undefined' || req.body[image_pos] === void 0)) {
           if (req.files[image].size !== 0) {
             req.body[image] = req.files[image].name;
           } else {
             req.body[image] = req.body.prev_image;
             if (req.body['crop_' + index]) {
+              console.log("We did it! ", req.body[image]);
+              console.log("the height! ", req.body['height_' + image]);
+              console.log("the width! ", req.body['width_' + image]);
               crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image]);
             }
           }

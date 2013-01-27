@@ -141,12 +141,15 @@ module.exports = (opts)->
 
       image = "image" + req.body[image_pos]
 
-      unless req.body[image_pos] is 'undefined'
+      unless req.body[image_pos] is 'undefined' or req.body[image_pos] is undefined
         unless req.files[image].size is 0
           req.body[image] = req.files[image].name
         else 
           req.body[image] = req.body.prev_image
           if req.body['crop_' + index]
+            console.log "We did it! ", req.body[image]
+            console.log "the height! ", req.body['height_' + image]
+            console.log "the width! ", req.body['width_' + image]
             crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image])
 
     common_lib.syscall 'mkdir -p ' + filePath, ->

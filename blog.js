@@ -205,12 +205,9 @@
           if (req.files[image].size !== 0) {
             req.body[image] = req.files[image].name;
           } else {
-            req.body[image] = req.body.prev_image;
+            req.body[image] = req.body["prev_image" + req.body[image_pos]];
             if (req.body['crop_' + index]) {
-              console.log("We did it! ", req.body.prev_image);
-              console.log("the height! ", req.body['height_' + image]);
-              console.log("the width! ", req.body['width_' + image]);
-              crop_img(req.body.prev_image, req.body['height_' + image], req.body['width_' + image]);
+              crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image]);
             }
           }
         }

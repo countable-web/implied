@@ -154,7 +154,7 @@ module.exports = (opts)->
     
   app.post "/admin/blog/:id", staff, (req, res) ->
     process_save req
-    console.log "These are the categories: ", req.body
+    delete req.body._id
     db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
       if err then return res.send {success:false, error: err}
       res.redirect '/admin/blog'

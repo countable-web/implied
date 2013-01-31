@@ -157,8 +157,11 @@
       filePath = opts.upload_dir + "site/blog/";
       crop_img = function(img_name, img_height, img_width) {
         var cal_dim, newPath, thumbPath;
-        thumbPath = filePath + 'thumb_' + img_name;
-        newPath = filePath + img_name;
+        if (img_name === '' || img_name === void 0 || img_name === 'undefined') {
+          return true;
+        }
+        thumbPath = filePath + '"thumb_' + img_name + '"';
+        newPath = filePath + '"' + img_name + '"';
         cal_dim = function(w, h) {
           var height, ratio, width;
           ratio = 1.31645569620253;

@@ -105,8 +105,10 @@ module.exports = (opts)->
     filePath = opts.upload_dir + "site/blog/"
 
     crop_img = (img_name, img_height, img_width)->
-      thumbPath = filePath + 'thumb_' + img_name
-      newPath = filePath + img_name
+      if img_name is '' or img_name is undefined or img_name is 'undefined'
+        return true
+      thumbPath = filePath + '"thumb_' + img_name + '"'
+      newPath = filePath + '"' + img_name + '"'
       cal_dim = (w, h)->
         ratio = 1.31645569620253
         width = 0

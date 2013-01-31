@@ -35,6 +35,7 @@ module.exports = (opts)->
     filter =
       public_visible: 'on'
     if req.query.category
+      #filter.category = { $all: [req.query.category] }
       filter.category = req.query.category
     pagenum = 1*(req.query.page or 1)
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
@@ -66,13 +67,6 @@ module.exports = (opts)->
       email: req.session.email
       images: ""
 
-  app.get "/admin/blog-image-edit/:photo", staff, (req, res) ->
-    res.render "admin/blog-image-edit",
-      req: req
-      rec: {}
-      email: req.session.email
-      image: req.params.photo
-
 
   app.get "/blog-action/subscribe", (req, res)->
     if req.query.email
@@ -99,6 +93,7 @@ module.exports = (opts)->
         form: FORMS['blog']
         email: req.session.email
         rec: rec
+        category: rec.category
 
 
   process_save = (req)->
@@ -168,7 +163,6 @@ module.exports = (opts)->
 
   app.post "/admin/add-blog", staff, (req, res)->
     process_save req
-
     if not req.body.slug_field
       obj_id = new ObjectId()
       req.body._id = obj_id.toString(16)

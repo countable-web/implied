@@ -105,14 +105,6 @@
         images: ""
       });
     });
-    app.get("/admin/blog-image-edit/:photo", staff, function(req, res) {
-      return res.render("admin/blog-image-edit", {
-        req: req,
-        rec: {},
-        email: req.session.email,
-        image: req.params.photo
-      });
-    });
     app.get("/blog-action/subscribe", function(req, res) {
       var subscriber;
       if (req.query.email) {
@@ -148,7 +140,8 @@
           req: req,
           form: FORMS['blog'],
           email: req.session.email,
-          rec: rec
+          rec: rec,
+          category: rec.category
         });
       });
     });
@@ -235,7 +228,11 @@
     };
     app.post("/admin/blog/:id", staff, function(req, res) {
       process_save(req);
+<<<<<<< HEAD
+      console.log("These are the categories: ", req.body);
+=======
       delete req.body._id;
+>>>>>>> 3e0af421c3a2c29b36ea5ebd51b3eff0bdb233f4
       return db.collection('blog').update({
         _id: req.params.id
       }, req.body, false, function(err) {

@@ -98,32 +98,56 @@ module.exports = (opts)->
 
   process_save = (req)->
     filePath = opts.upload_dir + "site/blog/"
+    save_img = (img, crop, img_height, img_width)->
+      newPath = filePath + img.name
+      fs.readFile img.path, (err, data) ->
+        fs.writeFile newPath, data, (err)->
+          if crop
+            convert_img(img.name, img_width, img_height, true, true, true)
+          else
+            convert_img(img.name, img_width, img_height, false, true, true)
 
-    crop_img = (img_name, img_height, img_width)->
+    convert_img = (name, img_width, img_height, crop, resize, orient)->
       if img_name is '' or img_name is undefined or img_name is 'undefined'
         return true
-      thumbPath = filePath + '"thumb_' + img_name + '"'
-      newPath = filePath + '"' + img_name + '"'
-      cal_dim = (w, h)->
+      crop_img_dim = (w, h)->
         ratio = 1.31645569620253
         width = 0
         height = 0
         if w / h < ratio
-          width = parseInt(w, 10)
-          height = parseInt(w / ratio, 10)
+          width = Math.round w
+          height = Math.round w / ratio
         else
-          height = parseInt h, 10
-          width = parseInt h * ratio, 10
-        return width + "x" + height
+          height = Math.round h
+          width = Math.round h * ratio
+        return [width, height]
 
-      common_lib.syscall 'convert ' + newPath + ' -gravity center -crop ' + cal_dim(img_width, img_height) + '+0+0 ' + thumbPath
+      scale_img_dim = ()->
+        maxW = 800
+        maxH = 500
+        return " -resize '" + maxW + 'x' + maxH + "' "
 
-    save_img = (img, crop, img_height, img_width)->
-      fs.readFile img.path, (err, data) ->
-        newPath = filePath + img.name
-        fs.writeFile newPath, data, (err)->
-          if crop
-            crop_img(img.name, img_height, img_width)
+      auto_orient = ()->
+        return " -auto-orient "
+
+      thumbPath = filePath + name
+      newPath = filePath + name
+      convert_commands = ''
+      size = [img_width, img_height]
+
+      if crop
+        thumbPath = filePath + 'thumb-' + name
+        size = crop_img_dim(size[0], size[1])
+        convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 '
+
+      if resize
+        convert_commands += scale_img_dim()
+
+      if orient
+        convert_commands += auto_orient()
+
+      console.log "Here we go: " + 'convert ' + newPath + convert_commands + thumbPath
+      common_lib.syscall 'convert ' + newPath + convert_commands + thumbPath
 
     obj_id = {_id: req.params.id}
     req.body.content = req.body.content.replace /\r\n/g, '<br>'
@@ -144,7 +168,7 @@ module.exports = (opts)->
         else 
           req.body[image] = req.body["prev_image" + req.body[image_pos]]
           if req.body['crop_' + index]
-            crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image])
+            convert_img(req.body[image], req.body['width_' + image], req.body['height_' + image], true, true, true)
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
       unless req.files.image.size is 0

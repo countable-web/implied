@@ -146,8 +146,9 @@
       });
     });
     process_save = function(req) {
-      var crop_img, filePath, image, image_pos, index, obj_id, save_img, _i, _len, _ref;
+      var convert_img, filePath, image, image_pos, index, obj_id, save_img, _i, _len, _ref;
       filePath = opts.upload_dir + "site/blog/";
+<<<<<<< HEAD
       crop_img = function(img_name, img_height, img_width) {
         var cal_dim, newPath, thumbPath;
         if (img_name === '' || img_name === void 0 || img_name === 'undefined') {
@@ -156,31 +157,63 @@
         thumbPath = filePath + '"thumb_' + img_name + '"';
         newPath = filePath + '"' + img_name + '"';
         cal_dim = function(w, h) {
+=======
+      save_img = function(img, crop, img_height, img_width) {
+        var newPath;
+        newPath = filePath + img.name;
+        return fs.readFile(img.path, function(err, data) {
+          return fs.writeFile(newPath, data, function(err) {
+            if (crop) {
+              return convert_img(img.name, img_width, img_height, true, true, true);
+            } else {
+              return convert_img(img.name, img_width, img_height, false, true, true);
+            }
+          });
+        });
+      };
+      convert_img = function(name, img_width, img_height, crop, resize, orient) {
+        var auto_orient, convert_commands, crop_img_dim, newPath, scale_img_dim, size, thumbPath;
+        crop_img_dim = function(w, h) {
+>>>>>>> 9c2c9abf0caf8520c25f7bba5d4b59db1ce2566e
           var height, ratio, width;
           ratio = 1.31645569620253;
           width = 0;
           height = 0;
           if (w / h < ratio) {
-            width = parseInt(w, 10);
-            height = parseInt(w / ratio, 10);
+            width = Math.round(w);
+            height = Math.round(w / ratio);
           } else {
-            height = parseInt(h, 10);
-            width = parseInt(h * ratio, 10);
+            height = Math.round(h);
+            width = Math.round(h * ratio);
           }
-          return width + "x" + height;
+          return [width, height];
         };
-        return common_lib.syscall('convert ' + newPath + ' -gravity center -crop ' + cal_dim(img_width, img_height) + '+0+0 ' + thumbPath);
-      };
-      save_img = function(img, crop, img_height, img_width) {
-        return fs.readFile(img.path, function(err, data) {
-          var newPath;
-          newPath = filePath + img.name;
-          return fs.writeFile(newPath, data, function(err) {
-            if (crop) {
-              return crop_img(img.name, img_height, img_width);
-            }
-          });
-        });
+        scale_img_dim = function() {
+          var maxH, maxW;
+          maxW = 800;
+          maxH = 500;
+          return " -resize '" + maxW + 'x' + maxH + "' ";
+        };
+        auto_orient = function() {
+          return " -auto-orient ";
+        };
+        thumbPath = filePath + name;
+        newPath = filePath + name;
+        convert_commands = '';
+        size = [img_width, img_height];
+        if (crop) {
+          thumbPath = filePath + 'thumb-' + name;
+          size = crop_img_dim(size[0], size[1]);
+          convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 ';
+        }
+        if (resize) {
+          convert_commands += scale_img_dim();
+        }
+        if (orient) {
+          convert_commands += auto_orient();
+        }
+        console.log("Here we go: " + 'convert ' + newPath + convert_commands + thumbPath);
+        return common_lib.syscall('convert ' + newPath + convert_commands + thumbPath);
       };
       obj_id = {
         _id: req.params.id
@@ -203,7 +236,7 @@
           } else {
             req.body[image] = req.body["prev_image" + req.body[image_pos]];
             if (req.body['crop_' + index]) {
-              crop_img(req.body[image], req.body['height_' + image], req.body['width_' + image]);
+              convert_img(req.body[image], req.body['width_' + image], req.body['height_' + image], true, true, true);
             }
           }
         }

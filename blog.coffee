@@ -108,7 +108,7 @@ module.exports = (opts)->
             convert_img(img.name, img_width, img_height, false, true, true)
 
     convert_img = (name, img_width, img_height, crop, resize, orient)->
-      if img_name is '' or img_name is undefined or img_name is 'undefined'
+      if name is '' or name is undefined or name is 'undefined'
         return true
       crop_img_dim = (w, h)->
         ratio = 1.31645569620253

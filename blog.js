@@ -201,6 +201,8 @@
         if (orient) {
           convert_commands += auto_orient();
         }
+        newPath = '"' + newPath + '"';
+        thumbPath = '"' + thumbPath + '"';
         console.log("Here we go: " + 'convert ' + newPath + convert_commands + thumbPath);
         return common_lib.syscall('convert ' + newPath + convert_commands + thumbPath);
       };

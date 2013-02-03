@@ -65,7 +65,7 @@ module.exports = (opts)->
       rec: {}
       email: req.session.email
       images: ""
-
+      category: false
 
   app.get "/blog-action/subscribe", (req, res)->
     if req.query.email
@@ -97,16 +97,16 @@ module.exports = (opts)->
 
   process_save = (req)->
     filePath = opts.upload_dir + "site/blog/"
-    save_img = (img, crop, img_height, img_width)->
+    save_img = (img, crop, img_height, img_width, effect)->
       newPath = filePath + img.name
       fs.readFile img.path, (err, data) ->
         fs.writeFile newPath, data, (err)->
           if crop
-            convert_img(img.name, img_width, img_height, true, true, true)
+            convert_img(img.name, img_width, img_height, true, true, true, effect)
           else
-            convert_img(img.name, img_width, img_height, false, true, true)
+            convert_img(img.name, img_width, img_height, false, true, true, effect)
 
-    convert_img = (name, img_width, img_height, crop, resize, orient)->
+    convert_img = (name, img_width, img_height, crop, resize, orient, effect)->
       if name is '' or name is undefined or name is 'undefined'
         return true
       crop_img_dim = (w, h)->
@@ -129,6 +129,24 @@ module.exports = (opts)->
       auto_orient = ()->
         return " -auto-orient "
 
+      stain_glass_effect = (filename)->
+        return " ./bin/stainedglass -b 150 -t 0 " + filename + " " + filename
+      
+      enhanced_color_toning_effect = (filename)->
+        return " ./bin/colortoning -o 'h,l,a' "  + filename + " " + filename + "; ./bin/enhancelab"  + filename + " " + filename
+
+      screen_coloration_effect = (filename)->
+        return " ./bin/screeneffects -s 6 " + filename + " " + filename + "; ./bin/coloration "  + filename + " " + filename
+
+      turn_effect = (filename)->
+        return " ./bin/turn "  + filename + " " + filename
+
+      filmgrain_effect = (filename)->
+        return " ./bin/filmgrain "  + filename + " " + filename
+
+      enrich_retinex_effect = (filename)->
+        return " ./bin/retinex -m HSL -f 50 -c 1.2 "  + filename + " " + filename + "; enrich " + filename + " " + filename
+
       thumbPath = filePath + name
       newPath = filePath + name
       convert_commands = ''
@@ -144,10 +162,27 @@ module.exports = (opts)->
 
       if orient
         convert_commands += auto_orient()
+
       newPath = '"' + newPath + '"'
       thumbPath = '"' + thumbPath + '"'
-      console.log "Here we go: " + 'convert ' + newPath + convert_commands + thumbPath
-      common_lib.syscall 'convert ' + newPath + convert_commands + thumbPath
+      full_command = 'convert ' + newPath + convert_commands + thumbPath
+      full_command += '; '
+
+      console.log "This is my effect: ", effect
+
+      switch effect
+        when 'stain_glass' then full_command += stain_glass_effect(thumbPath)
+        when 'enhanced_color_toning' then full_command += enhanced_color_toning_effect(thumbPath)
+        when 'screen_coloration' then full_command += screen_coloration_effect(thumbPath)
+        when 'turn_effect' then full_command += turn_effect(thumbPath)
+        when 'filmgrain_effect' then full_command += filmgrain_effect(thumbPath)
+        when 'enrich_retinex' then full_command += enrich_retinex_effect(thumbPath)
+
+      unless effect is 'none'
+        full_command += ';'
+
+      console.log full_command
+      common_lib.syscall full_command
 
     obj_id = {_id: req.params.id}
     req.body.content = req.body.content.replace /\r\n/g, '<br>'
@@ -166,14 +201,14 @@ module.exports = (opts)->
         else 
           req.body[image] = req.body["prev_image" + req.body[image_pos]]
           if req.body['crop_' + index]
-            convert_img(req.body[image], req.body['width_' + image], req.body['height_' + image], true, true, true)
+            convert_img(req.body[image], req.body['width_' + image], req.body['height_' + image], true, true, true, req.body["effects_" + index])
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
       unless req.files.image.size is 0
-        save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image)
+        save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image, req.body.effects_1)
       for idx in [2, 3, 4, 5, 6]
         unless req.files["image" + idx].size is 0
-          save_img(req.files["image" + idx], req.body["crop_" + idx], req.body["height_image" + idx], req.body["width_image" + idx])
+          save_img(req.files["image" + idx], req.body["crop_" + idx], req.body["height_image" + idx], req.body["width_image" + idx], req.body['effects_' + idx])
 
     
   app.post "/admin/blog/:id", staff, (req, res) ->

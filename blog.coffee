@@ -65,6 +65,7 @@ module.exports = (opts)->
       rec: {}
       email: req.session.email
       images: ""
+      category: false
 
 
   app.get "/blog-action/subscribe", (req, res)->

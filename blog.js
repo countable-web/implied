@@ -107,7 +107,8 @@
         req: req,
         rec: {},
         email: req.session.email,
-        images: ""
+        images: "",
+        category: false
       });
     });
     app.get("/blog-action/subscribe", function(req, res) {

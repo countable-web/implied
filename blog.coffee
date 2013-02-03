@@ -78,7 +78,7 @@ module.exports = (opts)->
         res.send {success: true}
 
   app.get "/admin/blog", staff, (req, res) ->
-    db.collection('blog').find().toArray (err, entries)->
+    db.collection('blog').find().sort({title: 1}).toArray (err, entries)->
       res.render "admin/blog-list",
         req: req
         email: req.session.email

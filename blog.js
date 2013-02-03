@@ -128,7 +128,9 @@
       }
     });
     app.get("/admin/blog", staff, function(req, res) {
-      return db.collection('blog').find().toArray(function(err, entries) {
+      return db.collection('blog').find().sort({
+        title: 1
+      }).toArray(function(err, entries) {
         return res.render("admin/blog-list", {
           req: req,
           email: req.session.email,

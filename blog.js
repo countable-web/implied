@@ -207,7 +207,7 @@
           return " ./bin/stainedglass -b 150 -t 0 " + filename + " " + filename;
         };
         enhanced_color_toning_effect = function(filename) {
-          return " ./bin/colortoning -o 'h,l,a' " + filename + " " + filename + "; ./bin/enhancelab" + filename + " " + filename;
+          return " ./bin/colortoning -o 'h,l,a' " + filename + " " + filename + "; ./bin/enhancelab " + filename + " " + filename;
         };
         screen_coloration_effect = function(filename) {
           return " ./bin/screeneffects -s 6 " + filename + " " + filename + "; ./bin/coloration " + filename + " " + filename;

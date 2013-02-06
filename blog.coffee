@@ -1,5 +1,6 @@
 $ = require 'jquery'
 fs = require 'fs'
+async = require 'async'
 
 module.exports = (opts)->
   
@@ -38,8 +39,9 @@ module.exports = (opts)->
       #filter.category = { $all: [req.query.category] }
       filter.category = req.query.category
     pagenum = 1*(req.query.page or 1)
-    db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
-      db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
+    db.collection('blog').find({public_visible: 'on'}, {title:1, image:1, edit_1:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
+      db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
+        console.log "These are my blog articles: ",  blog_articles[0]
         res.render 'blog-entries',
           req: req
           email: req.session.email
@@ -95,19 +97,23 @@ module.exports = (opts)->
         category: rec.category
 
 
-  process_save = (req)->
+  process_save = (req, callback)->
     filePath = opts.upload_dir + "site/blog/"
-    save_img = (img, crop, img_height, img_width, effect)->
-      newPath = filePath + img.name
-      fs.readFile img.path, (err, data) ->
-        fs.writeFile newPath, data, (err)->
-          if crop
-            convert_img(img.name, img_width, img_height, true, true, true, effect)
-          else
-            convert_img(img.name, img_width, img_height, false, true, true, effect)
+    entry = req.body
 
-    convert_img = (name, img_width, img_height, crop, resize, orient, effect)->
-      if name is '' or name is undefined or name is 'undefined'
+    save_img = (args, callback)->
+      console.log "We are saving image: ", args.img_width
+      newPath = filePath + args.img.name
+      fs.readFile args.img.path, (err, data) ->
+        fs.writeFile newPath, data, (err)->
+          if args.crop
+            convert_img { name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: true, resize: true, orient: true, effect: args.effect }, callback
+          else
+            convert_img { name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: false, resize: true, orient: true, effect: args.effect }, callback
+
+    convert_img = (args, callback)->
+      console.log "We are converting image: ", args.name
+      if args.name is '' or args.name is undefined or args.name is 'undefined'
         return true
       crop_img_dim = (w, h)->
         ratio = 1.31645569620253
@@ -145,22 +151,21 @@ module.exports = (opts)->
         return " ./bin/filmgrain "  + filename + " " + filename
 
       enrich_retinex_effect = (filename)->
-        return " ./bin/retinex -m HSL -f 50 -c 1.2 "  + filename + " " + filename + "; enrich " + filename + " " + filename
+        return " ./bin/retinex -m HSL -f 50 -c 1.2 "  + filename + " " + filename + "; ./bin/enrich " + filename + " " + filename
 
-      thumbPath = filePath + name
-      newPath = filePath + name
+      thumbPath = filePath + 'thumb-' + args.name
+      newPath = filePath + args.name
       convert_commands = ''
-      size = [img_width, img_height]
+      size = [args.img_width, args.img_height]
 
-      if crop
-        thumbPath = filePath + 'thumb-' + name
+      if args.crop
         size = crop_img_dim(size[0], size[1])
         convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 '
 
-      if resize
+      if args.resize
         convert_commands += scale_img_dim()
 
-      if orient
+      if args.orient
         convert_commands += auto_orient()
 
       newPath = '"' + newPath + '"'
@@ -168,9 +173,8 @@ module.exports = (opts)->
       full_command = 'convert ' + newPath + convert_commands + thumbPath
       full_command += '; '
 
-      console.log "This is my effect: ", effect
-
-      switch effect
+      console.log "This is my effect: ", args.effect
+      switch args.effect
         when 'stain_glass' then full_command += stain_glass_effect(thumbPath)
         when 'enhanced_color_toning' then full_command += enhanced_color_toning_effect(thumbPath)
         when 'screen_coloration' then full_command += screen_coloration_effect(thumbPath)
@@ -178,45 +182,63 @@ module.exports = (opts)->
         when 'filmgrain_effect' then full_command += filmgrain_effect(thumbPath)
         when 'enrich_retinex' then full_command += enrich_retinex_effect(thumbPath)
 
-      unless effect is 'none'
+      unless args.effect is 'none'
         full_command += ';'
-
-      console.log full_command
-      common_lib.syscall full_command
+      
+      require('child_process').exec full_command, (error, stdout, stderr) ->
+        console.log "Executing: ", full_command
+        console.log "stdout: " + stdout
+        #console.log "stderr: " + stderr  if stderr isnt null
+        console.log "exec error: " + error  if error isnt null
+        if error or stderr
+          callback null, false
+        else
+          callback null, true
 
     obj_id = {_id: req.params.id}
-    req.body.content = req.body.content.replace /\r\n/g, '<br>'
+    entry.content = entry.content.replace /\r\n/g, '<br>'
 
-    for index in [1, 2, 3, 4, 5, 6]
-      image_pos = 'image_' + index + '_pos'
+    save_task_arr = []
+    convert_task_arr = []
+    idx = 1
+    for img in ["image", "image2", "image3", "image4", "image5", "image6"]
+      pos = 'image_' + idx + '_pos'
 
-      if req.body[image_pos] is '1'
-        req.body[image_pos] = ''
-
-      image = "image" + req.body[image_pos]
-
-      unless req.body[image_pos] is 'undefined' or req.body[image_pos] is undefined
-        unless req.files[image].size is 0
-          req.body[image] = req.files[image].name
+      unless entry[pos] is 'undefined' or entry[pos] is undefined
+        unless req.files[img].size is 0
+          entry[img] = req.files[img].name
         else 
-          req.body[image] = req.body["prev_image" + req.body[image_pos]]
-          if req.body['crop_' + index]
-            convert_img(req.body[image], req.body['width_' + image], req.body['height_' + image], true, true, true, req.body["effects_" + index])
+          entry[pos] = "" if entry[pos] is '1'
+          entry[img] = entry["prev_image" + entry[pos]]
+          console.log "This is my entry: ", entry[pos]
+          if req.body['edit_' + idx]
+            console.log "This is my image: ", entry[img]
+            if entry[img]
+              convert_task_arr.push {name: entry[img], img_width: entry['width_' + img], img_height: entry['height_' + img], crop: entry['crop_' + idx], resize: true, orient: true, effect: entry["effects_" + idx]}
+      idx = idx + 1
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
-      unless req.files.image.size is 0
-        save_img(req.files.image, req.body.crop_1, req.body.height_image, req.body.width_image, req.body.effects_1)
-      for idx in [2, 3, 4, 5, 6]
-        unless req.files["image" + idx].size is 0
-          save_img(req.files["image" + idx], req.body["crop_" + idx], req.body["height_image" + idx], req.body["width_image" + idx], req.body['effects_' + idx])
+      idx = 1
+      for img in ["", "2", "3", "4", "5", "6"]
+        unless req.files["image" + img].size is 0
+          save_task_arr.push {img: req.files["image" + img], crop: req.body["crop_" + idx], img_height: req.body["height_image" + img], img_width: req.body["width_image" + img], resize: true, orient: true, effect: req.body['effects_' + idx]}
+        idx = idx + 1
 
-    
+      console.log "this is my save_task_arr: ", save_task_arr
+      console.log "this is my convert_task_arr: ", convert_task_arr
+
+      async.concatSeries save_task_arr, save_img, (err, results)->
+        if err then console.log "We have an Error with saving: ", err else console.log "We've completed saving successfully! ", results
+        async.concatSeries convert_task_arr, convert_img, (err, results)->
+          if err then console.log "We have an Error with converting: ", err else console.log "We've completed converting successfully! ", results
+          callback()
+
   app.post "/admin/blog/:id", staff, (req, res) ->
-    process_save req
-    delete req.body._id
-    db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
-      if err then return res.send {success:false, error: err}
-      res.redirect '/admin/blog'
+    process_save req, ()->
+      delete req.body._id
+      db.collection('blog').update {_id: req.params.id}, req.body, false, (err) ->
+        if err then return res.send {success:false, error: err}
+        res.redirect '/admin/blog'
 
   app.post "/admin/add-blog", staff, (req, res)->
     process_save req

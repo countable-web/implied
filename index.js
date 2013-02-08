@@ -192,23 +192,26 @@
           _id: args._id
         }, {
           $set: {
-            mls_listing_num: args.mls_listing_num
+            mls_listing_num: args.mls_listing_num,
+            test_listing: args.test_listing
           }
         });
         return callback(true);
       };
       task_array = [];
       return db.collection("listings").find().toArray(function(err, listings) {
-        var listing, new_mls_num, _i, _len;
+        var listing, new_mls_num, test_listing, _i, _len;
         for (_i = 0, _len = listings.length; _i < _len; _i++) {
           listing = listings[_i];
           new_mls_num = req.body["mls_listing_num#" + listing._id];
-          console.log("This is my new mls # ", new_mls_num);
+          test_listing = req.body["test_listing#" + listing._id];
           task_array.push({
             _id: listing._id,
-            mls_listing_num: new_mls_num
+            mls_listing_num: new_mls_num,
+            test_listing: test_listing
           });
         }
+        console.log("this is my task array: ", task_array);
         return async.concat(task_array, update_db, function(err, results) {
           console.log("these are my results", results);
           if (err) {
@@ -216,6 +219,15 @@
           }
           return res.redirect("/admin/listings");
         });
+      });
+    });
+    app.get(/^\/admin\/listing\/([0-9a-z\-]+)\/delete$/, function(req, res) {
+      var id;
+      id = req.params[0];
+      return db.collection('listings').remove({
+        _id: id
+      }, function(err) {
+        return res.redirect("/admin/listings");
       });
     });
     app.get("/admin/:collection", staff, function(req, res) {

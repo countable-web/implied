@@ -130,20 +130,27 @@ admin = (opts)->
 
     app.post "/admin/listings", staff, (req,res) ->
       update_db = (args, callback)->
-        db.collection("listings").update {_id: args._id}, {$set: {mls_listing_num: args.mls_listing_num}}
+        db.collection("listings").update {_id: args._id}, {$set: {mls_listing_num: args.mls_listing_num, test_listing: args.test_listing}}
         callback true
 
       task_array = []
       db.collection("listings").find().toArray (err, listings)->
         for listing in listings
           new_mls_num = req.body["mls_listing_num#" + listing._id]
-          console.log "This is my new mls # ", new_mls_num
-          task_array.push {_id: listing._id, mls_listing_num: new_mls_num}
-        #console.log "this is my task array: ", task_array
+          test_listing = req.body["test_listing#" + listing._id]
+
+          task_array.push {_id: listing._id, mls_listing_num: new_mls_num, test_listing: test_listing}
+
+        console.log "this is my task array: ", task_array
         async.concat task_array, update_db, (err, results)->
           console.log "these are my results", results
           if err then console.log "This is my error: ", err
           res.redirect "/admin/listings"
+
+    app.get /// ^ /admin/listing / ([0-9a-z\-]+) /delete $ ///, (req, res) ->
+      id = req.params[0]
+      db.collection('listings').remove {_id:id}, (err)->
+        res.redirect "/admin/listings"
 
     app.get "/admin/:collection", staff, (req,res) ->
       db.collection(req.params.collection).find().toArray (err, records)->

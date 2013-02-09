@@ -1,4 +1,3 @@
-
 module.exports= (opts)->
   db = opts.db
   

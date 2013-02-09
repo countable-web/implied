@@ -42,7 +42,7 @@ module.exports = (opts)->
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1, edit_1:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
         console.log "These are my blog articles: ",  blog_articles[0]
-        res.render 'blog-entries',
+        res.render 'blog/blog-entries',
           req: req
           email: req.session.email
           blog_articles: blog_articles[0...PAGE_SIZE]
@@ -55,7 +55,7 @@ module.exports = (opts)->
       db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
         console.log err if err
 
-        res.render "blog-entry",
+        res.render "blog/blog-entry",
           req: req
           blog_teasers: blog_teasers
           email: req.session.email

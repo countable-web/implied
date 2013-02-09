@@ -9,8 +9,9 @@
   async = require('async');
 
   module.exports = function(opts) {
-    var FORMS, NUM_PREVIEWS, PAGE_SIZE, app, common, common_lib, db, process_save, staff;
+    var FORMS, NUM_PREVIEWS, PAGE_SIZE, app, common, common_lib, db, photos, process_save, staff;
     common = require("./common")(opts);
+    photos = require('./photos');
     staff = common.staff;
     app = opts.app;
     db = opts.db;
@@ -66,7 +67,7 @@
           pub_date: -1
         }).skip(PAGE_SIZE * (pagenum - 1)).limit(PAGE_SIZE + 1).toArray(function(err, blog_articles) {
           console.log("These are my blog articles: ", blog_articles[0]);
-          return res.render('blog-entries', {
+          return res.render('blog/blog-entries', {
             req: req,
             email: req.session.email,
             blog_articles: blog_articles.slice(0, PAGE_SIZE),
@@ -98,7 +99,7 @@
           if (err) {
             console.log(err);
           }
-          return res.render("blog-entry", {
+          return res.render("blog/blog-entry", {
             req: req,
             blog_teasers: blog_teasers,
             email: req.session.email,
@@ -165,17 +166,17 @@
       });
     });
     process_save = function(req, callback) {
-      var convert_img, convert_task_arr, entry, filePath, idx, img, obj_id, pos, save_img, save_task_arr, _i, _len, _ref;
+      var convert_task_arr, entry, filePath, idx, img, obj_id, pos, save_img, save_task_arr, _i, _len, _ref;
       filePath = opts.upload_dir + "site/blog/";
       entry = req.body;
       save_img = function(args, callback) {
         var newPath;
-        console.log("We are saving image: ", args.img_width);
         newPath = filePath + args.img.name;
         return fs.readFile(args.img.path, function(err, data) {
           return fs.writeFile(newPath, data, function(err) {
             if (args.crop) {
-              return convert_img({
+              return photos.convert_img({
+                filePath: filePath,
                 name: args.img.name,
                 img_width: args.img_width,
                 img_height: args.img_height,
@@ -185,7 +186,8 @@
                 effect: args.effect
               }, callback);
             } else {
-              return convert_img({
+              return photos.convert_img({
+                filePath: filePath,
                 name: args.img.name,
                 img_width: args.img_width,
                 img_height: args.img_height,
@@ -196,107 +198,6 @@
               }, callback);
             }
           });
-        });
-      };
-      convert_img = function(args, callback) {
-        var auto_orient, convert_commands, crop_img_dim, enhanced_color_toning_effect, enrich_retinex_effect, filmgrain_effect, full_command, newPath, scale_img_dim, screen_coloration_effect, size, stain_glass_effect, thumbPath, turn_effect;
-        console.log("We are converting image: ", args.name);
-        if (args.name === '' || args.name === void 0 || args.name === 'undefined') {
-          return true;
-        }
-        crop_img_dim = function(w, h) {
-          var height, ratio, width;
-          ratio = 1.31645569620253;
-          width = 0;
-          height = 0;
-          if (w / h < ratio) {
-            width = Math.round(w);
-            height = Math.round(w / ratio);
-          } else {
-            height = Math.round(h);
-            width = Math.round(h * ratio);
-          }
-          return [width, height];
-        };
-        scale_img_dim = function() {
-          var maxH, maxW;
-          maxW = 800;
-          maxH = 500;
-          return " -resize '" + maxW + 'x' + maxH + "' ";
-        };
-        auto_orient = function() {
-          return " -auto-orient ";
-        };
-        stain_glass_effect = function(filename) {
-          return " ./bin/stainedglass -b 150 -t 0 " + filename + " " + filename;
-        };
-        enhanced_color_toning_effect = function(filename) {
-          return " ./bin/colortoning -o 'h,l,a' " + filename + " " + filename + "; ./bin/enhancelab " + filename + " " + filename;
-        };
-        screen_coloration_effect = function(filename) {
-          return " ./bin/screeneffects -s 6 " + filename + " " + filename + "; ./bin/coloration " + filename + " " + filename;
-        };
-        turn_effect = function(filename) {
-          return " ./bin/turn " + filename + " " + filename;
-        };
-        filmgrain_effect = function(filename) {
-          return " ./bin/filmgrain " + filename + " " + filename;
-        };
-        enrich_retinex_effect = function(filename) {
-          return " ./bin/retinex -m HSL -f 50 -c 1.2 " + filename + " " + filename + "; ./bin/enrich " + filename + " " + filename;
-        };
-        thumbPath = filePath + 'thumb-' + args.name;
-        newPath = filePath + args.name;
-        convert_commands = '';
-        size = [args.img_width, args.img_height];
-        if (args.crop) {
-          size = crop_img_dim(size[0], size[1]);
-          convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 ';
-        }
-        if (args.resize) {
-          convert_commands += scale_img_dim();
-        }
-        if (args.orient) {
-          convert_commands += auto_orient();
-        }
-        newPath = '"' + newPath + '"';
-        thumbPath = '"' + thumbPath + '"';
-        full_command = 'convert ' + newPath + convert_commands + thumbPath;
-        full_command += '; ';
-        console.log("This is my effect: ", args.effect);
-        switch (args.effect) {
-          case 'stain_glass':
-            full_command += stain_glass_effect(thumbPath);
-            break;
-          case 'enhanced_color_toning':
-            full_command += enhanced_color_toning_effect(thumbPath);
-            break;
-          case 'screen_coloration':
-            full_command += screen_coloration_effect(thumbPath);
-            break;
-          case 'turn_effect':
-            full_command += turn_effect(thumbPath);
-            break;
-          case 'filmgrain_effect':
-            full_command += filmgrain_effect(thumbPath);
-            break;
-          case 'enrich_retinex':
-            full_command += enrich_retinex_effect(thumbPath);
-        }
-        if (args.effect !== 'none') {
-          full_command += ';';
-        }
-        return require('child_process').exec(full_command, function(error, stdout, stderr) {
-          console.log("Executing: ", full_command);
-          console.log("stdout: " + stdout);
-          if (error !== null) {
-            console.log("exec error: " + error);
-          }
-          if (error || stderr) {
-            return callback(null, false);
-          } else {
-            return callback(null, true);
-          }
         });
       };
       obj_id = {
@@ -318,11 +219,10 @@
               entry[pos] = "";
             }
             entry[img] = entry["prev_image" + entry[pos]];
-            console.log("This is my entry: ", entry[pos]);
             if (req.body['edit_' + idx]) {
-              console.log("This is my image: ", entry[img]);
               if (entry[img]) {
                 convert_task_arr.push({
+                  filePath: filePath,
                   name: entry[img],
                   img_width: entry['width_' + img],
                   img_height: entry['height_' + img],
@@ -345,6 +245,7 @@
           img = _ref1[_j];
           if (req.files["image" + img].size !== 0) {
             save_task_arr.push({
+              filePath: filePath,
               img: req.files["image" + img],
               crop: req.body["crop_" + idx],
               img_height: req.body["height_image" + img],
@@ -364,7 +265,7 @@
           } else {
             console.log("We've completed saving successfully! ", results);
           }
-          return async.concatSeries(convert_task_arr, convert_img, function(err, results) {
+          return async.concatSeries(convert_task_arr, photos.convert_img, function(err, results) {
             if (err) {
               console.log("We have an Error with converting: ", err);
             } else {

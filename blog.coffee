@@ -2,9 +2,11 @@ $ = require 'jquery'
 fs = require 'fs'
 async = require 'async'
 
+
 module.exports = (opts)->
   
   common = require("./common") opts
+  photos = require './photos'
   staff = common.staff
 
   app = opts.app
@@ -42,7 +44,7 @@ module.exports = (opts)->
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1, edit_1:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
         console.log "These are my blog articles: ",  blog_articles[0]
-        res.render 'blog-entries',
+        res.render 'blog/blog-entries',
           req: req
           email: req.session.email
           blog_articles: blog_articles[0...PAGE_SIZE]
@@ -55,7 +57,7 @@ module.exports = (opts)->
       db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
         console.log err if err
 
-        res.render "blog-entry",
+        res.render "blog/blog-entry",
           req: req
           blog_teasers: blog_teasers
           email: req.session.email
@@ -102,98 +104,13 @@ module.exports = (opts)->
     entry = req.body
 
     save_img = (args, callback)->
-      console.log "We are saving image: ", args.img_width
       newPath = filePath + args.img.name
       fs.readFile args.img.path, (err, data) ->
         fs.writeFile newPath, data, (err)->
           if args.crop
-            convert_img { name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: true, resize: true, orient: true, effect: args.effect }, callback
+            photos.convert_img { filePath: filePath, name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: true, resize: true, orient: true, effect: args.effect }, callback
           else
-            convert_img { name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: false, resize: true, orient: true, effect: args.effect }, callback
-
-    convert_img = (args, callback)->
-      console.log "We are converting image: ", args.name
-      if args.name is '' or args.name is undefined or args.name is 'undefined'
-        return true
-      crop_img_dim = (w, h)->
-        ratio = 1.31645569620253
-        width = 0
-        height = 0
-        if w / h < ratio
-          width = Math.round w
-          height = Math.round w / ratio
-        else
-          height = Math.round h
-          width = Math.round h * ratio
-        return [width, height]
-
-      scale_img_dim = ()->
-        maxW = 800
-        maxH = 500
-        return " -resize '" + maxW + 'x' + maxH + "' "
-
-      auto_orient = ()->
-        return " -auto-orient "
-
-      stain_glass_effect = (filename)->
-        return " ./bin/stainedglass -b 150 -t 0 " + filename + " " + filename
-      
-      enhanced_color_toning_effect = (filename)->
-        return " ./bin/colortoning -o 'h,l,a' "  + filename + " " + filename + "; ./bin/enhancelab "  + filename + " " + filename
-
-      screen_coloration_effect = (filename)->
-        return " ./bin/screeneffects -s 6 " + filename + " " + filename + "; ./bin/coloration "  + filename + " " + filename
-
-      turn_effect = (filename)->
-        return " ./bin/turn "  + filename + " " + filename
-
-      filmgrain_effect = (filename)->
-        return " ./bin/filmgrain "  + filename + " " + filename
-
-      enrich_retinex_effect = (filename)->
-        return " ./bin/retinex -m HSL -f 50 -c 1.2 "  + filename + " " + filename + "; ./bin/enrich " + filename + " " + filename
-
-      thumbPath = filePath + 'thumb-' + args.name
-      newPath = filePath + args.name
-      convert_commands = ''
-      size = [args.img_width, args.img_height]
-
-      if args.crop
-        size = crop_img_dim(size[0], size[1])
-        convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 '
-
-      if args.resize
-        convert_commands += scale_img_dim()
-
-      if args.orient
-        convert_commands += auto_orient()
-
-      newPath = '"' + newPath + '"'
-      thumbPath = '"' + thumbPath + '"'
-      full_command = 'convert ' + newPath + convert_commands + thumbPath
-      full_command += '; '
-
-      console.log "This is my effect: ", args.effect
-      switch args.effect
-        when 'stain_glass' then full_command += stain_glass_effect(thumbPath)
-        when 'enhanced_color_toning' then full_command += enhanced_color_toning_effect(thumbPath)
-        when 'screen_coloration' then full_command += screen_coloration_effect(thumbPath)
-        when 'turn_effect' then full_command += turn_effect(thumbPath)
-        when 'filmgrain_effect' then full_command += filmgrain_effect(thumbPath)
-        when 'enrich_retinex' then full_command += enrich_retinex_effect(thumbPath)
-
-      unless args.effect is 'none'
-        full_command += ';'
-      
-      require('child_process').exec full_command, (error, stdout, stderr) ->
-        console.log "Executing: ", full_command
-        console.log "stdout: " + stdout
-        #console.log "stderr: " + stderr  if stderr isnt null
-        console.log "exec error: " + error  if error isnt null
-        if error or stderr
-          callback null, false
-        else
-          callback null, true
+            photos.convert_img { filePath: filePath, name: args.img.name, img_width: args.img_width, img_height: args.img_height, crop: false, resize: true, orient: true, effect: args.effect }, callback
 
     obj_id = {_id: req.params.id}
     entry.content = entry.content.replace /\r\n/g, '<br>'
@@ -210,18 +127,16 @@ module.exports = (opts)->
         else 
           entry[pos] = "" if entry[pos] is '1'
           entry[img] = entry["prev_image" + entry[pos]]
-          console.log "This is my entry: ", entry[pos]
           if req.body['edit_' + idx]
-            console.log "This is my image: ", entry[img]
             if entry[img]
-              convert_task_arr.push {name: entry[img], img_width: entry['width_' + img], img_height: entry['height_' + img], crop: entry['crop_' + idx], resize: true, orient: true, effect: entry["effects_" + idx]}
+              convert_task_arr.push {filePath: filePath, name: entry[img], img_width: entry['width_' + img], img_height: entry['height_' + img], crop: entry['crop_' + idx], resize: true, orient: true, effect: entry["effects_" + idx]}
       idx = idx + 1
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
       idx = 1
       for img in ["", "2", "3", "4", "5", "6"]
         unless req.files["image" + img].size is 0
-          save_task_arr.push {img: req.files["image" + img], crop: req.body["crop_" + idx], img_height: req.body["height_image" + img], img_width: req.body["width_image" + img], resize: true, orient: true, effect: req.body['effects_' + idx]}
+          save_task_arr.push {filePath: filePath, img: req.files["image" + img], crop: req.body["crop_" + idx], img_height: req.body["height_image" + img], img_width: req.body["width_image" + img], resize: true, orient: true, effect: req.body['effects_' + idx]}
         idx = idx + 1
 
       console.log "this is my save_task_arr: ", save_task_arr
@@ -229,7 +144,7 @@ module.exports = (opts)->
 
       async.concatSeries save_task_arr, save_img, (err, results)->
         if err then console.log "We have an Error with saving: ", err else console.log "We've completed saving successfully! ", results
-        async.concatSeries convert_task_arr, convert_img, (err, results)->
+        async.concatSeries convert_task_arr, photos.convert_img, (err, results)->
           if err then console.log "We have an Error with converting: ", err else console.log "We've completed converting successfully! ", results
           callback()
 

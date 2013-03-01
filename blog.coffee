@@ -156,19 +156,19 @@ module.exports = (opts)->
         res.redirect '/admin/blog'
 
   app.post "/admin/add-blog", staff, (req, res)->
-    process_save req
-    if not req.body.slug_field
-      return fail 'Slug is required.'
-    else
-      req.body._id = req.body.slug_field
-
-    db.collection('blog').findOne {_id: req.body._id}, (err, entry)->
-      if entry
-        return fail 'Slug is already used.'
+    process_save req, ()->
+      if not req.body.slug_field
+        return fail 'Slug is required.'
       else
-        db.collection("blog").insert req.body, (err, entry)->
-          if err then console.error err
-          res.redirect '/admin/blog'
+        req.body._id = req.body.slug_field
+
+      db.collection('blog').findOne {_id: req.body._id}, (err, entry)->
+        if entry
+          return fail 'Slug is already used.'
+        else
+          db.collection("blog").insert req.body, (err, entry)->
+            if err then console.error err
+            res.redirect '/admin/blog'
 
   app.get "/admin/blog/:id/delete", staff, (req, res) ->
     db.collection('blog').remove {_id: req.params.id}, (err, rec) ->

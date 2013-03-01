@@ -60,6 +60,7 @@ users = (opts)->
           if users.length is 0
             Users.insert req.body, (err, user)->
               req.session.email = user.email
+              req.session.admin = user.admin
               goto_next req, res
           else
             req.flash?("error", "That user already exists.")
@@ -174,7 +175,6 @@ admin = (opts)->
       db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
         res.redirect '/admin/'+req.params.collection
 
-
     FORMS = 
       pages:
         print: 'paths'
@@ -188,7 +188,6 @@ admin = (opts)->
           ,
             name:'meta'
         ]
-
 
 blog = require './blog'
 

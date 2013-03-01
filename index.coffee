@@ -41,6 +41,7 @@ users = (opts)->
       , (err, user)->
         if user
           req.session.email = user.email
+          req.session.admin = user.admin
           req.flash?("success", "You've been logged in.")
           goto_next req, res
         else

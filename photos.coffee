@@ -14,8 +14,8 @@ module.exports.convert_img = (args, callback)->
     return [width, height]
 
   scale_img_dim = ()->
-    maxW = 800
-    maxH = 500
+    maxW = args.img_width or 800
+    maxH = args.img_height or 500
     return " -resize '" + maxW + 'x' + maxH + "' "
 
   auto_orient = ()->

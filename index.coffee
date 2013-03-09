@@ -4,6 +4,7 @@ uuid = require 'node-uuid'
 fs = require 'fs'
 async = require 'async'
 
+videos = require './videos'
 
 users = (opts)->
     
@@ -156,7 +157,7 @@ admin = (opts)->
 
     app.get "/admin/:collection", staff, (req,res) ->
       db.collection(req.params.collection).find().toArray (err, records)->
-        res.render "admin-list",
+        res.render "admin/admin-list",
           title: req.params.collection
           form: forms[req.params.collection]
           req: req
@@ -190,15 +191,15 @@ admin = (opts)->
             name:'meta'
         ]
 
-blog = require './blog'
-
 module.exports.init = (opts)->
-  if opts.blog
-    blog opts
+  if opts.videos
+    videos opts
 
   if opts.users
     users opts
 
   if opts.admin
     admin opts
+
+
 

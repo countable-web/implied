@@ -43,10 +43,10 @@ users = (opts)->
         if user
           req.session.email = user.email
           req.session.admin = user.admin
-          req.flash?("success", "You've been logged in.")
+          req.flash("success", "You've been logged in.")
           goto_next req, res
         else
-          req.flash?("error", "Email or password incorrect.")
+          req.flash("error", "Email or password incorrect.")
           res.redirect req.body.onerror or req.path
 
     app.get "/logout", (req, res) ->
@@ -65,11 +65,11 @@ users = (opts)->
               req.session.admin = user.admin
               goto_next req, res
           else
-            req.flash?("error", "That user already exists.")
+            req.flash("error", "That user already exists.")
             res.render 'signup',
               req: req
       else
-        req.flash?("error", "Please enter a username and password.")
+        req.flash("error", "Please enter a username and password.")
         res.render 'signup',
           req: req
     

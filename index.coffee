@@ -4,6 +4,7 @@ uuid = require 'node-uuid'
 fs = require 'fs'
 async = require 'async'
 
+videos = require './videos'
 
 users = (opts)->
     
@@ -25,6 +26,13 @@ users = (opts)->
     goto_next = (req,res)->
       res.redirect req.query.then or req.body.then or '/'
 
+    # Replacement for req.flash
+    flash = (req, message_type, message)->
+      if message_type and message
+        m = req.session.messages ?= {}
+        m[message_type] ?= []
+        m[message_type].push message
+
     # Log in
     # HTTP API:
     # @param then - page to redirect to on success.
@@ -32,6 +40,7 @@ users = (opts)->
     # @param email - user to log in.
     # @param password - the user's password.
     app.post "/login", (req,res) ->
+
       Users.findOne
         email:req.body.email
         $or: [
@@ -42,15 +51,15 @@ users = (opts)->
         if user
           req.session.email = user.email
           req.session.admin = user.admin
-          req.flash?("success", "You've been logged in.")
+          flash req, "success", "You've been logged in."
           goto_next req, res
         else
-          req.flash?("error", "Email or password incorrect.")
+          flash req, "error", "Email or password incorrect."
           res.redirect req.body.onerror or req.path
 
     app.get "/logout", (req, res) ->
       req.session.email = null
-      req.flash?("success", "You've been safely logged out")
+      flash req, "success", "You've been safely logged out"
       goto_next req, res
 
     app.post "/signup", (req,res) ->
@@ -64,11 +73,11 @@ users = (opts)->
               req.session.admin = user.admin
               goto_next req, res
           else
-            req.flash?("error", "That user already exists.")
+            flash req, "error", "That user already exists."
             res.render 'signup',
               req: req
       else
-        req.flash?("error", "Please enter a username and password.")
+        flash req, "error", "Please enter a username and password."
         res.render 'signup',
           req: req
     
@@ -89,10 +98,10 @@ users = (opts)->
             body: "Go here to reset your password: http://" + opts.host + "/reset-password-confirm?token=" + token
           )
           console.log 'sent'
-          req.flash?("message", "You've been sent an email with instructions on resetting your password.")
+          flash req, "message", "You've been sent an email with instructions on resetting your password."
           goto_next req, res
         else
-          req.flash?("error", "No user with that email address was found.")
+          flash req, "error", "No user with that email address was found."
 
     app.post "/reset-password-confirm", (req,res)->
       if req.session.email
@@ -101,104 +110,22 @@ users = (opts)->
         query = {password_reset_token: req.query.token}
       Users.update query, {$set:{password:req.body.password}}, (err, user) ->
         if err
-          req.flash 'error', 'Password reset failed'
+          flash req, 'error', 'Password reset failed'
         else
-          req.flash 'success', 'Password was reset'
+          flash req, 'success', 'Password was reset'
         goto_next req, res
 
-admin = (opts)->
-    opts.login_url ?= "/login"
-
-    app = opts.app
-    db = opts.db
-    
-    forms = opts.forms or {}
-    
-    common = require("./common") opts
-    staff = common.staff
-
-    app.get "/admin", staff, (req,res) ->
-      res.render 'admin/admin',
-        req:req
-        email: req.session.email
-
-    app.get "/admin/listings", staff, (req,res) ->
-      db.collection("listings").find().sort({user_email:1}).toArray (err, records)->
-        res.render "admin/admin-listings",
-          title: "Admin Listings"
-          req: req
-          email: req.session.email
-          listings: records
-
-    app.post "/admin/listings", staff, (req,res) ->
-      update_db = (args, callback)->
-        db.collection("listings").update {_id: args._id}, {$set: {mls_listing_num: args.mls_listing_num, test_listing: args.test_listing}}
-        callback true
-
-      task_array = []
-      db.collection("listings").find().toArray (err, listings)->
-        for listing in listings
-          new_mls_num = req.body["mls_listing_num#" + listing._id]
-          test_listing = req.body["test_listing#" + listing._id]
-
-          task_array.push {_id: listing._id, mls_listing_num: new_mls_num, test_listing: test_listing}
-
-        console.log "this is my task array: ", task_array
-        async.concat task_array, update_db, (err, results)->
-          console.log "these are my results", results
-          if err then console.log "This is my error: ", err
-          res.redirect "/admin/listings"
-
-    app.get /// ^ /admin/listing / ([0-9a-z\-]+) /delete $ ///, (req, res) ->
-      id = req.params[0]
-      db.collection('listings').remove {_id:id}, (err)->
-        res.redirect "/admin/listings"
-
-    app.get "/admin/:collection", staff, (req,res) ->
-      db.collection(req.params.collection).find().toArray (err, records)->
-        res.render "admin-list",
-          title: req.params.collection
-          form: forms[req.params.collection]
-          req: req
-          email: req.session.email
-          records: records
-
-    app.get "/admin/:collection/:id", staff, (req,res) ->
-      db.collection(req.params.collection).findOne {_id: new ObjectId(req.params.id)}, (err, rec)->
-        res.render "admin-object",
-          title: req.params.collection
-          req: req
-          form: forms[req.params.collection]
-          email: req.session.email
-          rec: rec
-
-    app.post "/admin/:collection/:id", staff, (req,res) ->
-      db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
-        res.redirect '/admin/'+req.params.collection
-
-    FORMS = 
-      pages:
-        print: 'paths'
-        fields: [
-            name:'title'
-          ,
-            name:'path'
-          ,
-            name:'content'
-            type:'textarea'
-          ,
-            name:'meta'
-        ]
-
-blog = require './blog'
+admin = require './admin'
 
 module.exports.init = (opts)->
-  if opts.blog
-    blog opts
+  if opts.videos
+    videos opts
 
   if opts.users
     users opts
 
   if opts.admin
     admin opts
+
+
 

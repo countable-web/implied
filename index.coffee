@@ -3,7 +3,7 @@ md5 = require 'MD5'
 uuid = require 'node-uuid'
 fs = require 'fs'
 async = require 'async'
-
+blog = require './blog'
 videos = require './videos'
 
 users = (opts)->
@@ -120,6 +120,9 @@ admin = require './admin'
 module.exports.init = (opts)->
   if opts.videos
     videos opts
+
+  if opts.blog
+    blog opts
 
   if opts.users
     users opts

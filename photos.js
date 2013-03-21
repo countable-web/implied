@@ -22,8 +22,8 @@
     };
     scale_img_dim = function() {
       var maxH, maxW;
-      maxW = 800;
-      maxH = 500;
+      maxW = args.img_width || 800;
+      maxH = args.img_height || 500;
       return " -resize '" + maxW + 'x' + maxH + "' ";
     };
     auto_orient = function() {

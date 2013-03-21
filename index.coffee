@@ -5,6 +5,7 @@ fs = require 'fs'
 async = require 'async'
 
 videos = require './videos'
+blog = require './blog'
 
 users = (opts)->
     
@@ -65,6 +66,12 @@ users = (opts)->
     app.post "/signup", (req,res) ->
       if req.body.email and req.body.password
         req.body.password = md5(req.body.password + opts.salt)
+
+        # Validate the email address.
+        unless /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test req.body.email
+          flash req, "error", "Invalid email address."
+          return res.render 'signup',
+            req: req
         # Check if user exists.
         Users.find({email: req.body.email}).toArray (err, users)->
           if users.length is 0
@@ -72,6 +79,13 @@ users = (opts)->
               req.session.email = user.email
               req.session.admin = user.admin
               goto_next req, res
+
+            if opts.mailer and opts.signup
+              opts.mailer?(
+                to: req.body.email
+                subject: opts.signup.subject or "Welcome!"
+                body: opts.signup.body or ("Thankyou for signing up at " + server_path(req))
+              )
           else
             flash req, "error", "That user already exists."
             res.render 'signup',
@@ -126,6 +140,9 @@ module.exports.init = (opts)->
 
   if opts.admin
     admin opts
+
+  if opts.blog
+    blog opts
 
 
 

@@ -34,7 +34,6 @@ module.exports = (opts)->
           name: 'slug_field'
       ]
   
-  console.log 'registering blog'
   app.get "/blog", (req, res) ->
     filter =
       public_visible: 'on'

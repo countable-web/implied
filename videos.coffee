@@ -31,18 +31,22 @@ module.exports = (opts)->
 
     common_lib.syscall 'mkdir -p ' + filePath, ->
       # If user uploaded data, store tasks to process files in save_task_arr
-      unless req.files.image.size is 0
+      if req.files.image.size is 0
+        entry.image = entry.prev_image
+      else
         entry.image = req.files.image.name
-        entry.video = req.files.video.name
         save_task_arr.push {filePath: filePath, img: req.files["image"], type: 'image', crop: false, resize: true, orient: true, effect: 'none'}
+
+      if req.files.video.size is 0
+        entry.video = entry.prev_video
+      else
+        entry.video = req.files.video.name
         save_task_arr.push {filePath: filePath, img: req.files["video"], type: 'video'}
 
       console.log "this is my save_task_arr: ", save_task_arr
 
       # If no data was uploaded by the user, set image and video to previous values.
       if save_task_arr.length is 0
-        entry.image = entry.prev_image
-        entry.video = entry.prev_video
         return callback()
 
       # We process the save file tasks asynchronously.
@@ -50,7 +54,7 @@ module.exports = (opts)->
       # concatSeries - Applies save_file to each item in save_task_arr, concatenating the boolean results. 
       # An OR operation is performed for each boolean result, finalizing in a single true or false.
       async.concatSeries save_task_arr, save_file, (err, results)->
-        if results then console.log "We have an Error with Saving: ", err, results else console.log "We've completed saving successfully! ", results
+        if err then console.log "We have an Error with Saving: ", err, results else console.log "We've completed saving successfully! ", results
         return callback()
 
   # Get public videos filtered by keywords if query is provided.

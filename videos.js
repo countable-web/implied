@@ -48,9 +48,10 @@
       entry.content = entry.content.replace(/\r\n/g, '<br>');
       save_task_arr = [];
       return common_lib.syscall('mkdir -p ' + filePath, function() {
-        if (req.files.image.size !== 0) {
+        if (req.files.image.size === 0) {
+          entry.image = entry.prev_image;
+        } else {
           entry.image = req.files.image.name;
-          entry.video = req.files.video.name;
           save_task_arr.push({
             filePath: filePath,
             img: req.files["image"],
@@ -60,6 +61,11 @@
             orient: true,
             effect: 'none'
           });
+        }
+        if (req.files.video.size === 0) {
+          entry.video = entry.prev_video;
+        } else {
+          entry.video = req.files.video.name;
           save_task_arr.push({
             filePath: filePath,
             img: req.files["video"],
@@ -68,12 +74,10 @@
         }
         console.log("this is my save_task_arr: ", save_task_arr);
         if (save_task_arr.length === 0) {
-          entry.image = entry.prev_image;
-          entry.video = entry.prev_video;
           return callback();
         }
         return async.concatSeries(save_task_arr, save_file, function(err, results) {
-          if (results) {
+          if (err) {
             console.log("We have an Error with Saving: ", err, results);
           } else {
             console.log("We've completed saving successfully! ", results);

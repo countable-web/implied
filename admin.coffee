@@ -1,6 +1,6 @@
 
 
-module.exports = (opts)->
+module.exports = (opts)-> 
     opts.login_url ?= "/login"
 
     app = opts.app

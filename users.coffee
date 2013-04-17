@@ -1,5 +1,6 @@
 md5 = require 'MD5'
 uuid = require 'node-uuid'
+flash = (require './common').flash
 
 module.exports = (opts)->
     
@@ -21,12 +22,6 @@ module.exports = (opts)->
     goto_next = (req,res)->
       res.redirect req.query.then or req.body.then or '/'
 
-    # Replacement for req.flash
-    flash = (req, message_type, message)->
-      if message_type and message
-        m = req.session.messages ?= {}
-        m[message_type] ?= []
-        m[message_type].push message
 
     # Log in
     # HTTP API:
@@ -73,7 +68,7 @@ module.exports = (opts)->
               req.session.email = user.email
               req.session.admin = user.admin
               goto_next req, res
-
+ 
             if opts.mailer and opts.signup
               opts.mailer?(
                 to: req.body.email

@@ -5,9 +5,20 @@
   exec = require('child_process').exec;
 
   module.exports = function(opts) {
-    var db;
+    var db, flash;
 
     db = opts.db;
+    flash = function(req, message_type, message) {
+      var m, _base, _ref, _ref1;
+
+      if (message_type && message) {
+        m = (_ref = (_base = req.session).messages) != null ? _ref : _base.messages = {};
+        if ((_ref1 = m[message_type]) == null) {
+          m[message_type] = [];
+        }
+        return m[message_type].push(message);
+      }
+    };
     return {
       syscall: function(command, callback, throws) {
         var child;
@@ -30,17 +41,7 @@
           return typeof callback === "function" ? callback(stdout, error || stderr) : void 0;
         });
       },
-      flash: function(req, message_type, message) {
-        var m, _base, _ref, _ref1;
-
-        if (message_type && message) {
-          m = (_ref = (_base = req.session).messages) != null ? _ref : _base.messages = {};
-          if ((_ref1 = m[message_type]) == null) {
-            m[message_type] = [];
-          }
-          return m[message_type].push(message);
-        }
-      },
+      flash: flash,
       staff: function(req, res, next) {
         if (req.session.email) {
           return db.collection('users').findOne({
@@ -50,16 +51,12 @@
             if (user) {
               return next();
             } else {
-              if (typeof req.flash === "function") {
-                req.flash('Not authorized.');
-              }
+              flash('Not authorized.');
               return res.redirect(opts.login_url + "?then=" + req.path);
             }
           });
         } else {
-          if (typeof req.flash === "function") {
-            req.flash('Not authorized.');
-          }
+          flash('Not authorized.');
           return res.redirect(opts.login_url + "?then=" + req.path);
         }
       }

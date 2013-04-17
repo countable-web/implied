@@ -1,6 +1,5 @@
 md5 = require 'MD5'
 uuid = require 'node-uuid'
-flash = (require './common').flash
 
 module.exports = (opts)->
     
@@ -16,6 +15,8 @@ module.exports = (opts)->
           res.render item,
             req: req
 
+    flash = (require './common')(opts).flash
+    
     statics ['signup', 'login', 'reset-password-confirm', 'reset-password-submit']
 
     # Forward a request based on "then" hints in it.

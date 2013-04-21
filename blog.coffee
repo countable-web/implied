@@ -33,7 +33,7 @@ module.exports = (opts)->
         ,
           name: 'slug_field'
       ]
-
+  
   app.get "/blog", (req, res) ->
     filter =
       public_visible: 'on'
@@ -43,7 +43,6 @@ module.exports = (opts)->
     pagenum = 1*(req.query.page or 1)
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1, edit_1:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
-        console.log "These are my blog articles: ",  blog_articles[0]
         res.render 'blog/blog-entries',
           req: req
           email: req.session.email
@@ -55,7 +54,7 @@ module.exports = (opts)->
   app.get "/blog/:id", (req,res) ->
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
-        console.log err if err
+        console.error err if err
 
         res.render "blog/blog-entry",
           req: req
@@ -139,13 +138,10 @@ module.exports = (opts)->
           save_task_arr.push {filePath: filePath, img: req.files["image" + img], crop: req.body["crop_" + idx], img_height: req.body["height_image" + img], img_width: req.body["width_image" + img], resize: true, orient: true, effect: req.body['effects_' + idx]}
         idx = idx + 1
 
-      console.log "this is my save_task_arr: ", save_task_arr
-      console.log "this is my convert_task_arr: ", convert_task_arr
-
       async.concatSeries save_task_arr, save_img, (err, results)->
-        if err then console.log "We have an Error with saving: ", err else console.log "We've completed saving successfully! ", results
+        if err then console.error "FAILED TO SAVE IMAGES - ", err
         async.concatSeries convert_task_arr, photos.convert_img, (err, results)->
-          if err then console.log "We have an Error with converting: ", err else console.log "We've completed converting successfully! ", results
+          if err then console.error "ERROR CONVERTING IMAGES: ", err
           callback()
 
   app.post "/admin/blog/:id", staff, (req, res) ->

@@ -52,9 +52,19 @@ module.exports = (opts)->
       async.concatSeries save_task_arr, save_file, (err, results)->
         if results then console.log "We have an Error with Saving: ", err, results else console.log "We've completed saving successfully! ", results
         return callback()
+  
+  # Video detail view
+  app.get "/videos/:id", (req,res) ->
+    db.collection('videos').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
+      console.log err if err
+
+      res.render "videos/video-entry",
+        req: req
+        email: req.session.email
+        entry: entry
 
   # Get public videos filtered by keywords if query is provided.
-  app.get "/videos", staff, (req,res) ->
+  app.get "/videos", (req,res) ->
     filter = $and: [
       public_visible: 'on'
     ,
@@ -111,13 +121,4 @@ module.exports = (opts)->
       db.collection('videos').update {_id: req.params.id}, req.body, false, (err) ->
         if err then return res.send {success:false, error: err}
         res.redirect '/admin/videos'
-
-  app.get "/videos/:id", (req,res) ->
-    db.collection('videos').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
-      console.log err if err
-
-      res.render "videos/video-entry",
-        req: req
-        email: req.session.email
-        entry: entry
 

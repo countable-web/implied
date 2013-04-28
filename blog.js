@@ -293,25 +293,26 @@
       });
     });
     app.post("/admin/add-blog", staff, function(req, res) {
-      process_save(req);
       if (!req.body.slug_field) {
         return fail('Slug is required.');
       } else {
         req.body._id = req.body.slug_field;
       }
-      return db.collection('blog').findOne({
-        _id: req.body._id
-      }, function(err, entry) {
-        if (entry) {
-          return fail('Slug is already used.');
-        } else {
-          return db.collection("blog").insert(req.body, function(err, entry) {
-            if (err) {
-              console.error(err);
-            }
-            return res.redirect('/admin/blog');
-          });
-        }
+      return process_save(req, function() {
+        return db.collection('blog').findOne({
+          _id: req.body._id
+        }, function(err, entry) {
+          if (entry) {
+            return fail('Slug is already used.');
+          } else {
+            return db.collection("blog").insert(req.body, function(err, entry) {
+              if (err) {
+                console.error(err);
+              }
+              return res.redirect('/admin/blog');
+            });
+          }
+        });
       });
     });
     return app.get("/admin/blog/:id/delete", staff, function(req, res) {

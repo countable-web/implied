@@ -1,0 +1,14 @@
+
+if req.session.messages
+  if req.session.messages.error
+    .alert.alert-error
+      ul
+        for message in req.session.messages.error
+          li!= message
+        - delete req.session.messages.error
+  if req.session.messages.success
+    .alert.alert-success
+      ul
+        for message in req.session.messages.success
+          li!= message
+        - delete req.session.messages.success

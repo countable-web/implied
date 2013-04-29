@@ -1,26 +1,55 @@
 {
-  "name": "monexp",
-  "version": "0.0.0",
-  "description": "Reusable webapp parts for Express with MongoDB.",
-  "main": "index.js",
-  "scripts": {
-    "test": "node test/test.js"
-  },
+  "name": "implied-js",
+  "description": "Reusable parts for Express with MongoDB",
+  "version": "0.1.0",
+  "author": "Clark Van Oyen - clark@countable.ca",
+  "contributors": [
+    {
+      "name": "Clark Van Oyen",
+      "email": "clark@countable.ca"
+    },
+    {
+      "name": "Benny Poon",
+      "email": "bpbeernie@gmail.com"
+    }
+  ],
   "dependencies": {
-    "MD5": "*"
+    "MD5": "*",
+    "express": "3.*",
+    "better-assert": "~1.0.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/countable/monexp.git"
+  "devDependencies": {
+    "ejs": "*",
+    "mocha": "*",
+    "jade": "*",
+    "stylus": "*",
+    "should": "*",
+    "connect-redis": "*",
+    "github-flavored-markdown": "*",
+    "supertest": "0.6.0"
   },
   "keywords": [
+    "express",
+    "framework",
+    "web",
+    "app",
+    "api",
     "mongodb",
     "express",
     "authentication",
     "users"
   ],
-  "author": {
-    "name": "Clark Van Oyen"
+  "repository": "git://github.com/countable/implied",
+  "main": "index",
+  "bin": {
+    "express": "./bin/implied-js"
+  },
+  "scripts": {
+    "prepublish": "npm prune",
+    "test": "make test"
+  },
+  "engines": {
+    "node": "*"
   },
   "license": "BSD"
 }

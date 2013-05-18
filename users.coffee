@@ -97,15 +97,19 @@ module.exports = (opts)->
           token = uuid.v4()
           Users.update({_id:user._id}, {$set:{password_reset_token:token}})
           opts.mailer?(
-            to: user.email
-            subject: "Password Reset"
-            body: "Go here to reset your password: http://" + opts.host + "/reset-password-confirm?token=" + token
+              to: user.email
+              subject: "Password Reset"
+              body: "Go here to reset your password: http://" + opts.host + "/reset-password-confirm?token=" + token
+            ,
+              (err)->
+                (console.error err) if err
           )
-          console.log 'sent'
-          flash req, "message", "You've been sent an email with instructions on resetting your password."
+
+          flash req, "success", "You've been sent an email with instructions on resetting your password."
           goto_next req, res
         else
           flash req, "error", "No user with that email address was found."
+          res.render 'reset-password-submit'
 
     app.post "/reset-password-confirm", (req,res)->
       if req.session.email

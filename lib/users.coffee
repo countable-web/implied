@@ -1,12 +1,13 @@
 md5 = require 'MD5'
 uuid = require 'node-uuid'
 
-module.exports = (opts)->
+module.exports = (app, opts)->
     
-    opts.salt ?= 'secret-the-cat'
+    salt = app.get('secret') ? 'secret-the-cat'
 
-    app = opts.app
-    db = opts.db
+    db = app.get 'db'
+    mailer = app.get 'mailer'
+
     Users = db.collection 'users'
     
     statics = (arr) ->
@@ -15,7 +16,7 @@ module.exports = (opts)->
           res.render item,
             req: req
 
-    flash = (require './common')(opts).flash
+    flash = (require './common')(app).flash
     
     statics ['signup', 'login', 'reset-password-confirm', 'reset-password-submit']
 
@@ -33,10 +34,10 @@ module.exports = (opts)->
     app.post "/login", (req,res) ->
 
       Users.findOne
-        email:req.body.email
+        email: req.body.email
         $or: [
           {password: req.body.password}
-          {password: md5(req.body.password + opts.salt)}
+          {password: md5(req.body.password + salt)}
         ]
       , (err, user)->
         if user
@@ -55,7 +56,7 @@ module.exports = (opts)->
 
     app.post "/signup", (req,res) ->
       if req.body.email and req.body.password
-        req.body.password = md5(req.body.password + opts.salt)
+        req.body.password = md5(req.body.password + salt)
 
         # Validate the email address.
         unless /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test req.body.email
@@ -70,11 +71,11 @@ module.exports = (opts)->
               req.session.admin = user.admin
               goto_next req, res
  
-            if opts.mailer and opts.signup
-              opts.mailer?(
+            if mailer and opts.signup
+              mailer?(
                 to: req.body.email
-                subject: opts.signup.subject or "Welcome!"
-                body: opts.signup.body or ("Thankyou for signing up at " + server_path(req))
+                subject: opts.subject or "Welcome!"
+                body: opts.body or ("Thankyou for signing up at " + server_path(req))
               )
           else
             flash req, "error", "That user already exists."
@@ -96,10 +97,10 @@ module.exports = (opts)->
         if user
           token = uuid.v4()
           Users.update({_id:user._id}, {$set:{password_reset_token:token}})
-          opts.mailer?(
+          mailer?(
               to: user.email
               subject: "Password Reset"
-              body: "Go here to reset your password: http://" + opts.host + "/reset-password-confirm?token=" + token
+              body: "Go here to reset your password: http://" + host + "/reset-password-confirm?token=" + token
             ,
               (err)->
                 (console.error err) if err

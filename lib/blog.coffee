@@ -1,18 +1,17 @@
-$ = require 'jquery'
+
 fs = require 'fs'
 async = require 'async'
+util = require '../util'
 
-
-module.exports = (opts)->
+module.exports = (app)->
   
-  common = require("./common") opts
+  common = require("./common") app
   photos = require './photos'
+  upload_dir = app.get('upload_dir')
+  
   staff = common.staff
 
-  app = opts.app
-  db = opts.db
-  common_lib = require '../../lib/common'
-
+  db = app.get('db')
 
   PAGE_SIZE = 3
   NUM_PREVIEWS = 5
@@ -99,7 +98,7 @@ module.exports = (opts)->
 
 
   process_save = (req, callback)->
-    filePath = opts.upload_dir + "site/blog/"
+    filePath = path.join(upload_dir, "site/blog/")
     entry = req.body
 
     save_img = (args, callback)->
@@ -131,7 +130,7 @@ module.exports = (opts)->
               convert_task_arr.push {filePath: filePath, name: entry[img], img_width: entry['width_' + img], img_height: entry['height_' + img], crop: entry['crop_' + idx], resize: true, orient: true, effect: entry["effects_" + idx]}
       idx = idx + 1
 
-    common_lib.syscall 'mkdir -p ' + filePath, ->
+    util.syscall 'mkdir -p ' + filePath, ->
       idx = 1
       for img in ["", "2", "3", "4", "5", "6"]
         unless req.files["image" + img].size is 0

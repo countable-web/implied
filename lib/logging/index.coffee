@@ -1,10 +1,11 @@
 
+express = require 'express'
+
 # Implied logging module.
 #
-module.exports = (opts)->
+module.exports = (app)->
 
-  mailer = opts.mailer
-  app = opts.app
+  mailer = (app.get 'mailer')
 
   app.configure "development", ->
     app.use express.errorHandler
@@ -19,7 +20,7 @@ module.exports = (opts)->
   # @param callback (err)->
   prod_error = (opts, callback)->
 
-    mailer
+    mailer.send_mail
       subject: "Error on " + (app.get('host') or "website") + " - " + opts.title
       from: "errors@mrblisted.ca"
       to: [app.get('error_email')]
@@ -69,3 +70,28 @@ module.exports = (opts)->
         message: message
 
       res.render '500'
+
+  app.get "/client_error", (req, res)->
+    
+    unless req.query.message
+      return res.send
+        message: '/client_error: Failed - No error message specified.'
+        success: false
+
+    message = "DETAILS:\n========\n\n"
+    for own k,v of req.query
+      message += "- "+k+": "+v
+    
+    # Only show errors on production sites.
+    if process.env.NODE_ENV is 'production'
+      prod_error
+        title: "Error Caught on Client"
+        message: message
+      , (err)->
+        res.send {success:true}
+    # For dev sites, warn about possible config issue.
+    else
+      console.error 'DEV SITE RECIEVED CLIENT ERROR:', req.query
+      res.send
+        success: true
+        message: 'Client error ignored because this is a development site.'

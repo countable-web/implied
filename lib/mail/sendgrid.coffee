@@ -1,5 +1,6 @@
 
 base = require './base'
+util = require '../util'
 
 class Mailer extends base.Mailer
 
@@ -20,7 +21,7 @@ class Mailer extends base.Mailer
       headers:
         'X-SMTPAPI': '{"category": '+(@app.get 'name')+'}'
       
-    @sendgrid.send monexp.extend({},defaults,opts), (success, message) ->
+    @sendgrid.send util.extend({},defaults,opts), (success, message) ->
       console.error message unless success
       callback?(success, message)
 

@@ -72,11 +72,11 @@ module.exports = (app, opts)->
               goto_next req, res
  
             if mailer and opts.signup
-              mailer?(
+              mailer.send_mail
                 to: req.body.email
                 subject: opts.subject or "Welcome!"
                 body: opts.body or ("Thankyou for signing up at " + server_path(req))
-              )
+              
           else
             flash req, "error", "That user already exists."
             res.render 'signup',
@@ -97,7 +97,7 @@ module.exports = (app, opts)->
         if user
           token = uuid.v4()
           Users.update({_id:user._id}, {$set:{password_reset_token:token}})
-          mailer?(
+          mailer?.send_mail(
               to: user.email
               subject: "Password Reset"
               body: "Go here to reset your password: http://" + host + "/reset-password-confirm?token=" + token

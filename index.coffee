@@ -10,12 +10,6 @@ mongolian = require 'mongolian'
 MongoStore = require('express-session-mongo')
 
 
-class Plugin
-  constructor: ->
-    @app = app
-
-
-
 implied = module.exports = (app)->
 
   app ?= express()
@@ -33,7 +27,7 @@ implied = module.exports = (app)->
       app.plugin implied[plugin]
 
     # A Plugin class instance
-    else if plugin instanceof implied.Plugin
+    else if plugin instanceof implied.util.Plugin
       new plugin app, opts
 
     # A function, simlpy call it with the app, and it can do what it pleases.
@@ -59,12 +53,9 @@ implied.boilerplate = (app)->
   app.use express.cookieParser()
   
   if app.get('db')
-    console.log 'using mongostore'
     app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
 
   app.use express.methodOverride()
-
-  console.log path.join app.get('dir'), 'public'
 
   app.use express.static path.join app.get('dir'), 'public'
   app.use express.static path.join "/var", app.get 'name'
@@ -79,23 +70,14 @@ implied.boilerplate = (app)->
   app.use app.router
   app.set('view options', { layout: false })
 
+implied.util = require './util'
+
 implied.blog = require './lib/blog'
 implied.videos = require './lib/videos'
 implied.users = require './lib/users'
 implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'
 
-implied.util = require './util'
 implied.common = require './lib/common'
-
-implied.Plugin = Plugin
-
-implied.extend = (obj) ->
-    Array::slice.call(arguments, 1).forEach (source) ->
-      if source
-        for prop of source
-          obj[prop] = source[prop]
-
-    obj
 
 

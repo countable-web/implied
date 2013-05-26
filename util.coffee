@@ -1,10 +1,22 @@
+
+# Some utilities
 exec = require('child_process').exec
 
-module.exports = 
+class Plugin
+  constructor: ->
+    @app = app
 
-  # Canonical system call. 
+module.exports = 
+  extend: (obj) ->
+    Array::slice.call(arguments, 1).forEach (source) ->
+      if source
+        for prop of source
+          obj[prop] = source[prop]
+
+    obj
+
   syscall: (command, callback, throws=true) ->
-    child = exec command, (error, stdout, stderr) ->
+    exec command, (error, stdout, stderr) ->
       if stdout
         console.log "stdout: " + stdout
       if stderr and throws
@@ -14,3 +26,5 @@ module.exports =
         console.error command
         throw "exec error: " + error
       callback?(stdout, error or stderr)
+
+  Plugin: Plugin

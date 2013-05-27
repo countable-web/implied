@@ -5,7 +5,7 @@
 module.exports= (app)->
   
   db = app.get 'db'
-
+  flash = (require '../util').flash
   # Ensure a user is a staff member (has admin flag)
   staff: (req, res, next) ->
     if req.session.email

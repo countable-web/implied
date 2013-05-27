@@ -8,6 +8,7 @@ module.exports = (app)->
   photos = require './photos'
   staff = common.staff
   flash = require("../util").flash
+  console.log "FLASH", flash
 
   db = app.get 'db'
 

@@ -54,6 +54,12 @@
   };
 
   implied.boilerplate = function(app) {
+    if (!app.get("app_name")) {
+      app.set("app_name", "www");
+    }
+    if (!app.get("upload_dir")) {
+      app.set("upload_dir", path.join("/var", app.get("app_name")));
+    }
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
     app.use(express.limit('36mb'));
@@ -71,7 +77,8 @@
     }
     app.use(express.methodOverride());
     app.use(express["static"](path.join(app.get('dir'), 'public')));
-    app.use(express["static"](path.join("/var", app.get('name'))));
+    console.log('upload-dir', app.get('upload_dir'));
+    app.use(express["static"](app.get("upload_dir")));
     app.locals.process = process;
     app.use(function(req, res, next) {
       res.locals.req = res.locals.request = req;

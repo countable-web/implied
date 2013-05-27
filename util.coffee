@@ -12,7 +12,6 @@ module.exports =
       if source
         for prop of source
           obj[prop] = source[prop]
-
     obj
 
   syscall: (command, callback, throws=true) ->
@@ -26,5 +25,11 @@ module.exports =
         console.error command
         throw "exec error: " + error
       callback?(stdout, error or stderr)
+
+  flash: (req, message_type, message)->
+    if message_type and message
+      m = req.session.messages ?= {}
+      m[message_type] ?= []
+      m[message_type].push message
 
   Plugin: Plugin

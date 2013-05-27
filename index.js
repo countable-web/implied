@@ -32,7 +32,7 @@
         }
       } else if (typeof plugin === 'string') {
         if (!implied[plugin]) {
-          throw "Plugin `" + plugin("` was not found.");
+          throw "Plugin `" + plugin + "` was not found.";
         }
         app.plugin(implied[plugin]);
       } else if (plugin instanceof implied.util.Plugin) {
@@ -94,6 +94,8 @@
   implied.logging = require('./lib/logging');
 
   implied.admin = require('./lib/admin');
+
+  implied.sendgrid = require('./lib/mail/sendgrid');
 
   implied.common = require('./lib/common');
 

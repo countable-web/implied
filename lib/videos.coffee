@@ -4,9 +4,10 @@ async = require 'async'
 util = require '../util'
 
 module.exports = (app)->
-  common = require("./common") opts
+  common = require("./common") app
   photos = require './photos'
   staff = common.staff
+  flash = require("../util").flash
 
   db = app.get 'db'
 
@@ -103,14 +104,14 @@ module.exports = (app)->
     process_save req, ()->
     
       if not req.body.title
-        common.flash 'Title is required.'
+        flash 'Title is required.'
         add_video req, res
       else
         req.body._id = req.body.title.toLowerCase().replace(/\s/g, '-')
 
       db.collection('videos').findOne {_id: req.body._id}, (err, entry)->
         if entry
-          common.flash 'Title is already used.'
+          flash 'Title is already used.'
           add_video req, res
         else
           db.collection("videos").insert req.body, (err, entry)->

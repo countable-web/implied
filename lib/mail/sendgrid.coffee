@@ -1,12 +1,12 @@
 
 base = require './base'
-util = require '../util'
+util = require '../../util'
 
 class Mailer extends base.Mailer
 
   constructor: (app)->
     @app = app
-    @sendgrid = new (require("sendgrid").SendGrid)(@app.get 'username', @app.get 'password')
+    @sendgrid = new (require("sendgrid").SendGrid) @app.get('username'), @app.get 'password'
 
   # Send an email.
   #
@@ -25,5 +25,5 @@ class Mailer extends base.Mailer
       console.error message unless success
       callback?(success, message)
 
-Module.exports = (app)->
+module.exports = (app)->
   app.set 'mailer', new Mailer app

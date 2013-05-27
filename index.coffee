@@ -23,7 +23,7 @@ implied = module.exports = (app)->
 
     else if typeof plugin is 'string'
       unless implied[plugin]
-        throw "Plugin `" + plugin "` was not found."
+        throw "Plugin `" + plugin + "` was not found."
       app.plugin implied[plugin]
 
     # A Plugin class instance
@@ -77,6 +77,7 @@ implied.videos = require './lib/videos'
 implied.users = require './lib/users'
 implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'
+implied.sendgrid = require './lib/mail/sendgrid'
 
 implied.common = require './lib/common'
 

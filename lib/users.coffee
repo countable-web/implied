@@ -16,7 +16,7 @@ module.exports = (app, opts)->
           res.render item,
             req: req
 
-    flash = (require './common')(app).flash
+    flash = (require '../util').flash
     
     statics ['signup', 'login', 'reset-password-confirm', 'reset-password-submit']
 
@@ -32,7 +32,8 @@ module.exports = (app, opts)->
     # @param email - user to log in.
     # @param password - the user's password.
     app.post "/login", (req,res) ->
-
+      req.body.email = req.body.email.toLowerCase()
+      
       Users.findOne
         email: req.body.email
         $or: [
@@ -55,6 +56,8 @@ module.exports = (app, opts)->
       goto_next req, res
 
     app.post "/signup", (req,res) ->
+      req.body.email = req.body.email.toLowerCase()
+      
       if req.body.email and req.body.password
         req.body.password = md5(req.body.password + salt)
 
@@ -123,3 +126,4 @@ module.exports = (app, opts)->
         else
           flash req, 'success', 'Password was reset'
         goto_next req, res
+

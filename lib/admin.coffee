@@ -1,14 +1,13 @@
 
 
-module.exports = (opts)-> 
+module.exports = (app, opts={})-> 
     opts.login_url ?= "/login"
 
-    app = opts.app
-    db = opts.db
+    db = app.get 'db'
     
     forms = opts.forms or {}
     
-    common = require("./common") opts
+    common = require("./common") app
     staff = common.staff
 
     FORMS = 

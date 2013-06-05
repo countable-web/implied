@@ -78,9 +78,12 @@ module.exports = (app)->
         message: '/client_error: Failed - No error message specified.'
         success: false
 
-    message = "DETAILS:\n========\n\n"
+    message = """DETAILS:
+    ========
+
+    """
     for own k,v of req.query
-      message += "- "+k+": "+v
+      message += " - " + k + " : " + v + "\n"
     
     # Only show errors on production sites.
     if process.env.NODE_ENV is 'production'

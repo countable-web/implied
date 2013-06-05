@@ -1,7 +1,8 @@
 md5 = require 'MD5'
 uuid = require 'node-uuid'
+events = require 'events'
 
-module.exports = (app, opts)->
+me = module.exports = (app, opts)->
     
     salt = app.get('secret') ? 'secret-the-cat'
 
@@ -68,17 +69,14 @@ module.exports = (app, opts)->
             req: req
         # Check if user exists.
         Users.find({email: req.body.email}).toArray (err, users)->
+          console.log users
           if users.length is 0
             Users.insert req.body, (err, user)->
               req.session.email = user.email
               req.session.admin = user.admin
-              goto_next req, res
- 
-            if mailer and opts.signup
-              mailer.send_mail
-                to: req.body.email
-                subject: opts.subject or "Welcome!"
-                body: opts.body or ("Thankyou for signing up at " + server_path(req))
+              # User creation event.
+              me.emitter.emit 'signup', user
+              goto_next req, res           
               
           else
             flash req, "error", "That user already exists."
@@ -127,3 +125,4 @@ module.exports = (app, opts)->
           flash req, 'success', 'Password was reset'
         goto_next req, res
 
+me.emitter = new events.EventEmitter()

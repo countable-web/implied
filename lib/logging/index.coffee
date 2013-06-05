@@ -36,7 +36,14 @@ module.exports = (app)->
     #app.use express.errorHandler()
     app.use (err, req, res, next)->
 
-      message = """Stack Trace:
+      message = """Details:
+  ========
+
+   - location : #{req.host}#{req.originalUrl}
+   - xhr : #{req.xhr}
+  """
+
+      message += """Stack Trace:
   ============
 
   #{err.stack}
@@ -50,7 +57,7 @@ module.exports = (app)->
   """
       for own k,v of req.headers
         message += " - " + k + " : " + v + "\n"
-      
+     
       if req.session
         message += """
 

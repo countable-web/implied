@@ -21,9 +21,9 @@ module.exports = (app)->
   prod_error = (opts, callback)->
 
     mailer.send_mail
-      subject: "Error on " + (app.get('host') or "website") + " - " + opts.title
-      from: "errors@mrblisted.ca"
-      to: [app.get('error_email')]
+      subject: "ERROR on " + (app.get('host') or "website") + " - " + opts.title
+      from: app.get('admin_email') or "no-reply@example.com"
+      to: [app.get('error_email') or app.get('admin_email')]
       body: opts.message
     , (success, message)->
       if success

@@ -5,8 +5,8 @@ util = require '../../util'
 class Mailer extends base.Mailer
 
   constructor: (app)->
-    @app = app
-    @sendgrid = new (require("sendgrid").SendGrid) @app.get('username'), @app.get 'password'
+    super
+    @sendgrid = new (require("sendgrid").SendGrid) @app.get('email_username'), @app.get 'email_password'
 
   # Send an email.
   #
@@ -16,7 +16,7 @@ class Mailer extends base.Mailer
   # @param opts.to {array}
   send_mail: (opts, callback) ->
     defaults = 
-      from: app.get 'email_default_from_address'
+      from: @default_from
       text: opts.body
       headers:
         'X-SMTPAPI': '{"category": '+(@app.get 'name')+'}'

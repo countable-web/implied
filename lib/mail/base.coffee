@@ -3,6 +3,10 @@
 #
 class Mailer
   
+  constructor: (app)->
+    @app = app
+    @default_from = (app.get 'email_default_from') or (app.get 'admin_email') or 'no-reply@example.com'
+
   # Send an email.
   #
   # @param opts.subject {string} - email subject to send.

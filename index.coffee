@@ -16,6 +16,14 @@ implied = module.exports = (app)->
 
   app.plugin = (plugin, opts)->
     
+    opts ?= {}
+
+    plugin_instance = undefined # The instance to register.
+    plugin_name = opts.plugin_name # The name to register under.
+
+    # Initialize the plugin
+    # ---------------------
+
     # Array of plugins
     if plugin instanceof Array
       for child in plugin
@@ -24,11 +32,11 @@ implied = module.exports = (app)->
     else if typeof plugin is 'string'
       unless implied[plugin]
         throw "Plugin `" + plugin + "` was not found."
-      app.plugin implied[plugin]
+      app.plugin implied[plugin], implied.util.extend {plugin_name: plugin}, opts
 
     # A Plugin class instance
     else if plugin instanceof implied.util.Plugin
-      new plugin app, opts
+      plugin_instance = new plugin app
 
     # A function, simlpy call it with the app, and it can do what it pleases.
     else if typeof plugin is 'function'
@@ -37,7 +45,12 @@ implied = module.exports = (app)->
     else
       throw "Usage: app.plugin( plugin ) where plugin is of type <String> | <Function> | <Array of plugins> , but you used app.plugin(" + typeof plugin + ")"
 
-    app
+    # Register the plugin
+    # -------------------
+    if plugin_instance and plugin_name # Only register if a real plugin was called.
+      registered_plugins = app.get('plugins') or {}
+      registered_plugins[plugin_name] = plugin_instance
+      app.set 'plugins', registered_plugins
 
 implied.mongo = (app)->
 
@@ -64,7 +77,6 @@ implied.boilerplate = (app)->
   app.use express.methodOverride()
 
   app.use express.static path.join app.get('dir'), 'public'
-  console.log 'upload-dir', app.get 'upload_dir'
   app.use express.static app.get "upload_dir"
 
   app.locals.process = process
@@ -77,6 +89,7 @@ implied.boilerplate = (app)->
   app.use app.router
   app.set('view options', { layout: false })
 
+
 implied.util = require './util'
 
 implied.blog = require './lib/blog'
@@ -87,5 +100,4 @@ implied.admin = require './lib/admin'
 implied.sendgrid = require './lib/mail/sendgrid'
 
 implied.common = require './lib/common'
-
 

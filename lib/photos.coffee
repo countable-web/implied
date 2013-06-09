@@ -1,5 +1,8 @@
-module.exports.convert_img = (args, callback)->
-  if args.name is '' or args.name is undefined or args.name is 'undefined'
+
+# Image conversion utilities.
+# @param opts.resize {bool} resize the image if true.
+module.exports.convert_img = (opts, callback)->
+  if opts.name is '' or opts.name is undefined or opts.name is 'undefined'
     return true
   crop_img_dim = (w, h)->
     ratio = 1.31645569620253
@@ -14,8 +17,8 @@ module.exports.convert_img = (args, callback)->
     return [width, height]
 
   scale_img_dim = ()->
-    maxW = args.img_width or 800
-    maxH = args.img_height or 500
+    maxW = opts.img_width or 800
+    maxH = opts.img_height or 500
     return " -resize '" + maxW + 'x' + maxH + "' "
 
   auto_orient = ()->
@@ -39,18 +42,18 @@ module.exports.convert_img = (args, callback)->
   enrich_retinex_effect = (filename)->
     return " ./bin/retinex -m HSL -f 50 -c 1.2 "  + filename + " " + filename + "; ./bin/enrich " + filename + " " + filename
 
-  thumbPath = args.filePath + 'thumb-' + args.name
-  newPath = args.filePath + args.name
+  thumbPath = opts.filePath + 'thumb-' + opts.name
+  newPath = opts.filePath + opts.name
   convert_commands = ''
 
-  if args.crop
-    size = crop_img_dim(args.img_width, args.img_height)
+  if opts.crop
+    size = crop_img_dim(opts.img_width, opts.img_height)
     convert_commands += ' -gravity center -crop ' + size[0] + 'x' + size[1] + '+0+0 '
 
-  if args.resize
+  if opts.resize
     convert_commands += scale_img_dim()
 
-  if args.orient
+  if opts.orient
     convert_commands += auto_orient()
 
   newPath = '"' + newPath + '"'
@@ -58,7 +61,7 @@ module.exports.convert_img = (args, callback)->
   full_command = 'convert ' + newPath + convert_commands + thumbPath
   full_command += '; '
 
-  switch args.effect
+  switch opts.effect
     when 'stain_glass' then full_command += stain_glass_effect(thumbPath)
     when 'enhanced_color_toning' then full_command += enhanced_color_toning_effect(thumbPath)
     when 'screen_coloration' then full_command += screen_coloration_effect(thumbPath)
@@ -66,7 +69,7 @@ module.exports.convert_img = (args, callback)->
     when 'filmgrain_effect' then full_command += filmgrain_effect(thumbPath)
     when 'enrich_retinex' then full_command += enrich_retinex_effect(thumbPath)
 
-  unless args.effect is 'none'
+  unless opts.effect is 'none'
     full_command += ';'
   
   require('child_process').exec full_command, (error, stdout, stderr) ->

@@ -42,7 +42,7 @@ implied = module.exports = (app)->
 implied.mongo = (app)->
 
   server = new mongolian()
-  app.set 'db', server.db app.get 'app_name'
+  app.set 'db', server.db (app.get 'db_name') or app.get 'app_name'
 
 implied.boilerplate = (app)->
   

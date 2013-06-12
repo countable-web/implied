@@ -61,7 +61,7 @@
     var server;
 
     server = new mongolian();
-    return app.set('db', server.db(app.get('app_name')));
+    return app.set('db', server.db((app.get('db_name')) || app.get('app_name')));
   };
 
   implied.boilerplate = function(app) {
@@ -117,7 +117,3 @@
   implied.common = require('./lib/common');
 
 }).call(this);
-
-/*
-//@ sourceMappingURL=index.map
-*/

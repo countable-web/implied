@@ -45,6 +45,7 @@ me = module.exports = (app, opts)->
         if user
           req.session.email = user.email
           req.session.admin = user.admin
+          req.session.user = user
           flash req, "success", "You've been logged in."
           goto_next req, res
         else
@@ -53,6 +54,8 @@ me = module.exports = (app, opts)->
 
     app.get "/logout", (req, res) ->
       req.session.email = null
+      req.session.admin = null
+      req.session.user = null
       flash req, "success", "You've been safely logged out"
       goto_next req, res
 
@@ -74,6 +77,7 @@ me = module.exports = (app, opts)->
             Users.insert req.body, (err, user)->
               req.session.email = user.email
               req.session.admin = user.admin
+              req.session.user = user
               # User creation event.
               me.emitter.emit 'signup', user
               goto_next req, res           

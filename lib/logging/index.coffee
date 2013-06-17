@@ -43,7 +43,9 @@ module.exports = (app)->
    - xhr : #{req.xhr}
   """
 
-      message += """Stack Trace:
+      message += """
+  
+  Stack Trace:
   ============
 
   #{err.stack}
@@ -83,6 +85,11 @@ module.exports = (app)->
     unless req.query.message
       return res.send
         message: '/client_error: Failed - No error message specified.'
+        success: false
+    
+    if req.query.message is 'Script error.'
+      return res.send
+        message: 'CORS errors considered uninteresting.'
         success: false
 
     message = """DETAILS:

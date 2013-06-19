@@ -62,7 +62,6 @@
     }
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
-    app.use(express.limit('36mb'));
     app.use(express.bodyParser({
       upload_dir: '/tmp'
     }));
@@ -107,7 +106,3 @@
   implied.common = require('./lib/common');
 
 }).call(this);
-
-/*
-//@ sourceMappingURL=index.map
-*/

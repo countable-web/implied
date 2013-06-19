@@ -61,6 +61,8 @@ me = module.exports = (app, opts)->
 
     app.post "/signup", (req,res) ->
       req.body.email = req.body.email.toLowerCase()
+      req.body.confirmed = false
+      req.body.email_confirmation_token = uuid.v4()
       
       if req.body.email and req.body.password
         req.body.password = md5(req.body.password + salt)
@@ -78,6 +80,11 @@ me = module.exports = (app, opts)->
               req.session.email = user.email
               req.session.admin = user.admin
               req.session.user = user
+              mailer?.send_mail(
+                to: user.email
+                subject: "Email Confirmation"
+                body: (app.get 'welcome_email') + "Click here to confirm your email: http://" + (app.get 'host') + "/confirm_email?token=" + user.email_confirmation_token
+              )
               # User creation event.
               me.emitter.emit 'signup', user
               goto_next req, res           
@@ -96,6 +103,19 @@ me = module.exports = (app, opts)->
       if req.port and req.port isnt 80 then url += ":" + req.port
       url
 
+    # Email Confirmation
+    app.get "/confirm_email", (req, res)->
+      if req.session.email
+        query = {email: req.session.email}
+      else
+        query = {email_confirmation_token: req.query.token}
+      Users.update query, {$set:{confirmed:true}}, (err, user) ->
+        if err
+          flash req, 'error', 'Email confirmation failed'
+        else
+          flash req, 'success', 'Email confirmed'
+        goto_next req, res
+
     # Password Forgotten
     app.post "/reset-password-submit", (req,res)->
       Users.findOne {email: req.body.email}, (err, user) ->
@@ -105,7 +125,7 @@ me = module.exports = (app, opts)->
           mailer?.send_mail(
               to: user.email
               subject: "Password Reset"
-              body: "Go here to reset your password: http://" + host + "/reset-password-confirm?token=" + token
+              body: "Go here to reset your password: http://" + (app.get 'host') + "/reset-password-confirm?token=" + token
             ,
               (err)->
                 (console.error err) if err

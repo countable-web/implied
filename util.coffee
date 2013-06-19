@@ -33,3 +33,8 @@ module.exports =
       m[message_type].push message
 
   Plugin: Plugin
+
+  format: (str, dict)->
+    str.replace /\{([^\}]+)\}/g, (match, $1)->
+      dict[$1] or ''
+

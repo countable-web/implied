@@ -21,9 +21,9 @@ module.exports = (app)->
   prod_error = (opts, callback)->
 
     mailer.send_mail
-      subject: "Error on " + (app.get('host') or "website") + " - " + opts.title
-      from: "errors@mrblisted.ca"
-      to: [app.get('error_email')]
+      subject: "ERROR on " + (app.get('host') or "website") + " - " + opts.title
+      from: app.get('admin_email') or "no-reply@example.com"
+      to: [app.get('error_email') or app.get('admin_email')]
       body: opts.message
     , (success, message)->
       if success
@@ -36,7 +36,16 @@ module.exports = (app)->
     #app.use express.errorHandler()
     app.use (err, req, res, next)->
 
-      message = """Stack Trace:
+      message = """Details:
+  ========
+
+   - location : #{req.host}#{req.originalUrl}
+   - xhr : #{req.xhr}
+  """
+
+      message += """
+  
+  Stack Trace:
   ============
 
   #{err.stack}
@@ -50,7 +59,7 @@ module.exports = (app)->
   """
       for own k,v of req.headers
         message += " - " + k + " : " + v + "\n"
-      
+     
       if req.session
         message += """
 
@@ -77,10 +86,18 @@ module.exports = (app)->
       return res.send
         message: '/client_error: Failed - No error message specified.'
         success: false
+    
+    if req.query.message is 'Script error.'
+      return res.send
+        message: 'CORS errors considered uninteresting.'
+        success: false
 
-    message = "DETAILS:\n========\n\n"
+    message = """DETAILS:
+    ========
+
+    """
     for own k,v of req.query
-      message += "- "+k+": "+v
+      message += " - " + k + " : " + v + "\n"
     
     # Only show errors on production sites.
     if process.env.NODE_ENV is 'production'

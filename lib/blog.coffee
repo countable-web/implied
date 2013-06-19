@@ -1,4 +1,5 @@
 
+path = require 'path'
 fs = require 'fs'
 async = require 'async'
 util = require '../util'
@@ -55,11 +56,14 @@ module.exports = (app)->
       db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
         console.error err if err
 
-        res.render "blog/blog-entry",
-          req: req
-          blog_teasers: blog_teasers
-          email: req.session.email
-          entry: entry
+        unless entry
+          res.status(404).send('Not found')
+        else
+          res.render "blog/blog-entry",
+            req: req
+            blog_teasers: blog_teasers
+            email: req.session.email
+            entry: entry
 
   app.get "/admin/add-blog", staff, (req, res) ->
     res.render "admin/blog-add",

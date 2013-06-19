@@ -23,8 +23,13 @@
       app = express();
     }
     return app.plugin = function(plugin, opts) {
-      var child, _i, _len;
+      var child, plugin_instance, plugin_name, registered_plugins, _i, _len;
 
+      if (opts == null) {
+        opts = {};
+      }
+      plugin_instance = void 0;
+      plugin_name = opts.plugin_name;
       if (plugin instanceof Array) {
         for (_i = 0, _len = plugin.length; _i < _len; _i++) {
           child = plugin[_i];
@@ -34,15 +39,21 @@
         if (!implied[plugin]) {
           throw "Plugin `" + plugin + "` was not found.";
         }
-        app.plugin(implied[plugin]);
+        app.plugin(implied[plugin], implied.util.extend({
+          plugin_name: plugin
+        }, opts));
       } else if (plugin instanceof implied.util.Plugin) {
-        new plugin(app, opts);
+        plugin_instance = new plugin(app);
       } else if (typeof plugin === 'function') {
         plugin(app, opts);
       } else {
         throw "Usage: app.plugin( plugin ) where plugin is of type <String> | <Function> | <Array of plugins> , but you used app.plugin(" + typeof plugin + ")";
       }
-      return app;
+      if (plugin_instance && plugin_name) {
+        registered_plugins = app.get('plugins') || {};
+        registered_plugins[plugin_name] = plugin_instance;
+        return app.set('plugins', registered_plugins);
+      }
     };
   };
 
@@ -50,7 +61,7 @@
     var server;
 
     server = new mongolian();
-    return app.set('db', server.db(app.get('app_name')));
+    return app.set('db', server.db((app.get('db_name')) || app.get('app_name')));
   };
 
   implied.boilerplate = function(app) {
@@ -76,7 +87,6 @@
     }
     app.use(express.methodOverride());
     app.use(express["static"](path.join(app.get('dir'), 'public')));
-    console.log('upload-dir', app.get('upload_dir'));
     app.use(express["static"](app.get("upload_dir")));
     app.locals.process = process;
     app.use(function(req, res, next) {

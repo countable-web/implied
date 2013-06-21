@@ -19,6 +19,22 @@
   MongoStore = require('express-session-mongo');
 
   implied = module.exports = function(app) {
+    implied.middleware = {
+      page: function(req, res, next) {
+        var pagename;
+
+        pagename = req.path.substr(1);
+        return fs.exists(path.join(app.get('dir'), 'views', 'pages', pagename + '.jade'), function(exists) {
+          if (exists) {
+            return res.render(path.join('pages', pagename), {
+              req: req
+            });
+          } else {
+            return next();
+          }
+        });
+      }
+    };
     if (app == null) {
       app = express();
     }
@@ -65,6 +81,9 @@
   };
 
   implied.boilerplate = function(app) {
+    if (!app.get('dir')) {
+      app.set('dir', process.cwd());
+    }
     if (!app.get("app_name")) {
       app.set("app_name", "www");
     }
@@ -94,6 +113,8 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
+    console.log('page', implied.middleware.page);
+    app.use(implied.middleware.page);
     app.use(app.router);
     return app.set('view options', {
       layout: false

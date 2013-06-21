@@ -12,6 +12,17 @@ MongoStore = require('express-session-mongo')
 
 implied = module.exports = (app)->
 
+  implied.middleware =
+
+    page: (req, res, next)->
+      pagename = req.path.substr(1)
+      fs.exists path.join(app.get('dir'), 'views', 'pages', pagename+'.jade'), (exists)->
+        if exists
+          res.render path.join('pages', pagename),
+            req: req
+        else
+          next()
+
   app ?= express()
 
   app.plugin = (plugin, opts)->
@@ -59,6 +70,9 @@ implied.mongo = (app)->
 
 implied.boilerplate = (app)->
   
+  if not app.get 'dir'
+    app.set 'dir', process.cwd()
+
   if not app.get "app_name"
     app.set "app_name", "www"
 
@@ -86,8 +100,13 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
     
+  console.log 'page', implied.middleware.page
+  app.use implied.middleware.page
+
   app.use app.router
   app.set('view options', { layout: false })
+  
+
 
 
 implied.util = require './util'

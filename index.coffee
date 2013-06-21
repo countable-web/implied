@@ -81,7 +81,7 @@ implied.boilerplate = (app)->
 
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
-  app.use express.limit '36mb'
+  #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})
   app.use express.cookieParser()
   

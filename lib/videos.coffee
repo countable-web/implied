@@ -2,13 +2,13 @@ $ = require 'jquery'
 fs = require 'fs'
 async = require 'async'
 util = require '../util'
+path = require 'path'
 
 module.exports = (app)->
   common = require("./common") app
   photos = require './photos'
   staff = common.staff
   flash = require("../util").flash
-  console.log "FLASH", flash
 
   db = app.get 'db'
 
@@ -39,7 +39,8 @@ module.exports = (app)->
 
     entry = req.body
     obj_id = {_id: req.params.id}
-    filePath = app.get('upload_dir') + "site/videos/" # File upload directory
+    # File upload directory
+    filePath = path.join app.get('upload_dir'), "site/videos/"
     entry.content = entry.content.replace /\r\n/g, '<br>' # Modify content display properly in HTML
     save_task_arr = [] # Array to hold tasks to be saved
 
@@ -133,6 +134,14 @@ module.exports = (app)->
         req: req
         email: req.session.email
         rec: rec
+
+  # Ajax.
+  app.get "/admin/videos/:id/delete", staff, (req, res) ->
+    db.collection('videos').remove {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, rec) ->
+      if err then console.error err
+      res.send
+        success: (err is null)
+        message: err
 
   app.post "/admin/videos/:id", staff, (req, res) ->
     process_save req, ()->

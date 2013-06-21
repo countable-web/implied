@@ -1,6 +1,7 @@
 md5 = require 'MD5'
 uuid = require 'node-uuid'
 events = require 'events'
+util = require '../util'
 
 me = module.exports = (app, opts)->
     
@@ -21,10 +22,15 @@ me = module.exports = (app, opts)->
     
     statics ['signup', 'login', 'reset-password-confirm', 'reset-password-submit']
 
+    # User succeeded in authenticating.
+    auth_success = (req, user)->
+      req.session.email = user.email
+      req.session.admin = user.admin
+      req.session.user = user
+
     # Forward a request based on "then" hints in it.
     goto_next = (req,res)->
       res.redirect req.query.then or req.body.then or '/'
-
 
     # Log in
     # HTTP API:
@@ -43,21 +49,28 @@ me = module.exports = (app, opts)->
         ]
       , (err, user)->
         if user
-          req.session.email = user.email
-          req.session.admin = user.admin
-          flash req, "success", "You've been logged in."
-          goto_next req, res
+          if not user.confirmed and app.get 'email_confirm'
+            flash req, 'Please confirm your email address.'
+            res.redirect req.body.onerror or req.path
+          else
+            auth_success req, user
+            flash req, "success", "You've been logged in."
+            goto_next req, res
         else
           flash req, "error", "Email or password incorrect."
           res.redirect req.body.onerror or req.path
 
     app.get "/logout", (req, res) ->
       req.session.email = null
+      req.session.admin = null
+      req.session.user = null
       flash req, "success", "You've been safely logged out"
       goto_next req, res
 
     app.post "/signup", (req,res) ->
       req.body.email = req.body.email.toLowerCase()
+      req.body.confirmed = false
+      req.body.email_confirmation_token = uuid.v4()
       
       if req.body.email and req.body.password
         req.body.password = md5(req.body.password + salt)
@@ -67,13 +80,25 @@ me = module.exports = (app, opts)->
           flash req, "error", "Invalid email address."
           return res.render 'signup',
             req: req
+
         # Check if user exists.
         Users.find({email: req.body.email}).toArray (err, users)->
-          console.log users
+
           if users.length is 0
             Users.insert req.body, (err, user)->
-              req.session.email = user.email
-              req.session.admin = user.admin
+              # If no confirmation is required, sign the person in.
+              if app.get 'email_confirm'
+                flash req, 'Thanks for signing up! Please follow the instructions in your welcome email.'
+              else
+                auth_success req, user
+
+              mailer?.send_mail(
+                to: user.email
+                subject: app.get("welcome_email_subject") or "Email Confirmation"
+                body: util.format app.get("welcome_email"),
+                  first_name: user.first_name or user.email
+                  confirm_link: "http://" + (app.get 'host') + "/confirm_email?token=" + user.email_confirmation_token
+              )
               # User creation event.
               me.emitter.emit 'signup', user
               goto_next req, res           
@@ -92,6 +117,19 @@ me = module.exports = (app, opts)->
       if req.port and req.port isnt 80 then url += ":" + req.port
       url
 
+    # Email Confirmation
+    app.get "/confirm_email", (req, res)->
+      if req.session.email
+        query = {email: req.session.email}
+      else
+        query = {email_confirmation_token: req.query.token}
+      Users.update query, {$set:{confirmed:true}}, (err) ->
+        if err
+          flash req, 'error', 'Email confirmation failed'
+        else
+          flash req, 'success', 'Email confirmed'
+        goto_next req, res
+
     # Password Forgotten
     app.post "/reset-password-submit", (req,res)->
       Users.findOne {email: req.body.email}, (err, user) ->
@@ -101,7 +139,7 @@ me = module.exports = (app, opts)->
           mailer?.send_mail(
               to: user.email
               subject: "Password Reset"
-              body: "Go here to reset your password: http://" + host + "/reset-password-confirm?token=" + token
+              body: "Go here to reset your password: http://" + (app.get 'host') + "/reset-password-confirm?token=" + token
             ,
               (err)->
                 (console.error err) if err
@@ -118,7 +156,7 @@ me = module.exports = (app, opts)->
         query = {email: req.session.email}
       else
         query = {password_reset_token: req.query.token}
-      Users.update query, {$set:{password:req.body.password}}, (err, user) ->
+      Users.update query, {$set:{password:req.body.password}}, (err) ->
         if err
           flash req, 'error', 'Password reset failed'
         else

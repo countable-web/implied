@@ -2,6 +2,7 @@ md5 = require 'MD5'
 uuid = require 'node-uuid'
 events = require 'events'
 util = require '../util'
+ObjectId =  require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
     
@@ -161,6 +162,12 @@ me = module.exports = (app, opts)->
           flash req, 'error', 'Password reset failed'
         else
           flash req, 'success', 'Password was reset'
+        goto_next req, res
+
+    app.get "/become-user/:id", (req,res)->
+      console.log {_id: new ObjectId(req.params.id)}
+      Users.findOne {_id: new ObjectId(req.params.id)}, (err, user)->
+        auth_success req, user
         goto_next req, res
 
 me.emitter = new events.EventEmitter()

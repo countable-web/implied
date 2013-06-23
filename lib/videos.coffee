@@ -5,9 +5,9 @@ util = require '../util'
 path = require 'path'
 
 module.exports = (app)->
-  common = require("./common") app
+  
   photos = require './photos'
-  staff = common.staff
+  staff = app.get('implied').users.staff
   flash = require("../util").flash
 
   db = app.get 'db'

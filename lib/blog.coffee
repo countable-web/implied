@@ -6,12 +6,14 @@ util = require '../util'
 
 module.exports = (app)->
   
-  common = require("./common") app
   photos = require './photos'
   upload_dir = app.get('upload_dir')
   
-  staff = common.staff
-
+  staff = app.get('implied').users.staff
+  
+  unless staff
+    throw 'Users module is required'
+  
   db = app.get('db')
 
   PAGE_SIZE = 3

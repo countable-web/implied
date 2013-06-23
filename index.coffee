@@ -11,10 +11,13 @@ MongoStore = require('express-session-mongo')
 
 
 implied = module.exports = (app)->
-
+  
+  app.set('implied', implied)
   implied.middleware =
 
     page: (req, res, next)->
+      unless req.method is 'GET'
+        return next()
       pagename = req.path.substr(1)
       fs.exists path.join(app.get('dir'), 'views', 'pages', pagename+'.jade'), (exists)->
         if exists
@@ -99,15 +102,11 @@ implied.boilerplate = (app)->
   app.use (req,res,next)->
     res.locals.req = res.locals.request = req
     next()
-    
-  console.log 'page', implied.middleware.page
+  
   app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })
-  
-
-
 
 implied.util = require './util'
 
@@ -118,5 +117,5 @@ implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'
 implied.sendgrid = require './lib/mail/sendgrid'
 
-implied.common = require './lib/common'
+
 

@@ -6,9 +6,11 @@ module.exports = (app, opts={})->
     db = app.get 'db'
     
     forms = opts.forms or {}
+
+    staff = app.get('implied').users.staff
     
-    common = require("./common") app
-    staff = common.staff
+    unless staff
+      throw "Admin requires the user module be installed."
 
     FORMS = 
       pages:

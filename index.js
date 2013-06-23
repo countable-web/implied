@@ -19,10 +19,14 @@
   MongoStore = require('express-session-mongo');
 
   implied = module.exports = function(app) {
+    app.set('implied', implied);
     implied.middleware = {
       page: function(req, res, next) {
         var pagename;
 
+        if (req.method !== 'GET') {
+          return next();
+        }
         pagename = req.path.substr(1);
         return fs.exists(path.join(app.get('dir'), 'views', 'pages', pagename + '.jade'), function(exists) {
           if (exists) {
@@ -112,7 +116,6 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
-    console.log('page', implied.middleware.page);
     app.use(implied.middleware.page);
     app.use(app.router);
     return app.set('view options', {
@@ -133,7 +136,5 @@
   implied.admin = require('./lib/admin');
 
   implied.sendgrid = require('./lib/mail/sendgrid');
-
-  implied.common = require('./lib/common');
 
 }).call(this);

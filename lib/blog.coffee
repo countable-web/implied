@@ -57,7 +57,7 @@ module.exports = (app)->
         console.error err if err
 
         unless entry
-          res.status(404).send('Not found')
+          res.status(404).render '404'
         else
           res.render "blog/blog-entry",
             req: req

@@ -2,6 +2,7 @@ md5 = require 'MD5'
 uuid = require 'node-uuid'
 events = require 'events'
 util = require '../util'
+ObjectId =  require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
     
@@ -9,19 +10,23 @@ me = module.exports = (app, opts)->
 
     db = app.get 'db'
     mailer = app.get 'mailer'
-
     Users = db.collection 'users'
-    
-    statics = (arr) ->
-      arr.forEach (item)->
-        app.get '/'+item, (req,res)->
-          res.render item,
-            req: req
+
+    # Ensure a user is a staff member (has admin flag)
+    me.staff = (req, res, next) ->
+      if req.session.email
+        db.collection('users').findOne {email:req.session.email, admin:true}, (err, user)->
+          if user
+            next()
+          else
+            flash(req, 'error', 'Not authorized.')
+            res.redirect login_url + "?then=" + req.path
+      else
+        flash(req, 'error', 'Not authorized.')
+        res.redirect login_url + "?then=" + req.path
 
     flash = (require '../util').flash
     
-    statics ['signup', 'login', 'reset-password-confirm', 'reset-password-submit']
-
     # User succeeded in authenticating.
     auth_success = (req, user)->
       req.session.email = user.email
@@ -39,6 +44,7 @@ me = module.exports = (app, opts)->
     # @param email - user to log in.
     # @param password - the user's password.
     app.post "/login", (req,res) ->
+
       req.body.email = req.body.email.toLowerCase()
       
       Users.findOne
@@ -164,5 +170,11 @@ me = module.exports = (app, opts)->
         else
           flash req, 'success', 'Password was reset'
         goto_next req, res
+
+    app.get "/become-user/:id", me.staff, (req,res)->
+      Users.findOne {_id: new ObjectId(req.params.id)}, (err, user)->
+        auth_success req, user
+        goto_next req, res
+
 
 me.emitter = new events.EventEmitter()

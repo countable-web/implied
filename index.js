@@ -19,6 +19,26 @@
   MongoStore = require('express-session-mongo');
 
   implied = module.exports = function(app) {
+    app.set('implied', implied);
+    implied.middleware = {
+      page: function(req, res, next) {
+        var pagename;
+
+        if (req.method !== 'GET') {
+          return next();
+        }
+        pagename = req.path.substr(1);
+        return fs.exists(path.join(app.get('dir'), 'views', 'pages', pagename + '.jade'), function(exists) {
+          if (exists) {
+            return res.render(path.join('pages', pagename), {
+              req: req
+            });
+          } else {
+            return next();
+          }
+        });
+      }
+    };
     if (app == null) {
       app = express();
     }
@@ -65,6 +85,9 @@
   };
 
   implied.boilerplate = function(app) {
+    if (!app.get('dir')) {
+      app.set('dir', process.cwd());
+    }
     if (!app.get("app_name")) {
       app.set("app_name", "www");
     }
@@ -73,7 +96,6 @@
     }
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
-    app.use(express.limit('36mb'));
     app.use(express.bodyParser({
       upload_dir: '/tmp'
     }));
@@ -94,6 +116,7 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
+    app.use(implied.middleware.page);
     app.use(app.router);
     return app.set('view options', {
       layout: false
@@ -113,7 +136,5 @@
   implied.admin = require('./lib/admin');
 
   implied.sendgrid = require('./lib/mail/sendgrid');
-
-  implied.common = require('./lib/common');
 
 }).call(this);

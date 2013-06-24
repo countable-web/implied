@@ -11,6 +11,20 @@ MongoStore = require('express-session-mongo')
 
 
 implied = module.exports = (app)->
+  
+  app.set('implied', implied)
+  implied.middleware =
+
+    page: (req, res, next)->
+      unless req.method is 'GET'
+        return next()
+      pagename = req.path.substr(1)
+      fs.exists path.join(app.get('dir'), 'views', 'pages', pagename+'.jade'), (exists)->
+        if exists
+          res.render path.join('pages', pagename),
+            req: req
+        else
+          next()
 
   app ?= express()
 
@@ -59,6 +73,9 @@ implied.mongo = (app)->
 
 implied.boilerplate = (app)->
   
+  if not app.get 'dir'
+    app.set 'dir', process.cwd()
+
   if not app.get "app_name"
     app.set "app_name", "www"
 
@@ -67,7 +84,7 @@ implied.boilerplate = (app)->
 
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
-  app.use express.limit '36mb'
+  #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})
   app.use express.cookieParser()
   
@@ -85,10 +102,11 @@ implied.boilerplate = (app)->
   app.use (req,res,next)->
     res.locals.req = res.locals.request = req
     next()
-    
+  
+  app.use implied.middleware.page
+
   app.use app.router
   app.set('view options', { layout: false })
-
 
 implied.util = require './util'
 
@@ -99,5 +117,5 @@ implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'
 implied.sendgrid = require './lib/mail/sendgrid'
 
-implied.common = require './lib/common'
+
 

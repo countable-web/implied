@@ -127,6 +127,8 @@ me = module.exports = (app, opts)->
         if err
           flash req, 'error', 'Email confirmation failed'
         else
+          Users.findOne query, (err, user)->
+            auth_success req, user
           flash req, 'success', 'Email confirmed'
         goto_next req, res
 

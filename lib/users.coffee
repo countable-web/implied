@@ -11,6 +11,7 @@ me = module.exports = (app, opts)->
     db = app.get 'db'
     mailer = app.get 'mailer'
     Users = db.collection 'users'
+    login_url = "/login"
 
     # Ensure a user is a staff member (has admin flag)
     me.staff = (req, res, next) ->
@@ -133,6 +134,8 @@ me = module.exports = (app, opts)->
         if err
           flash req, 'error', 'Email confirmation failed'
         else
+          Users.findOne query, (err, user)->
+            auth_success req, user
           flash req, 'success', 'Email confirmed'
         goto_next req, res
 

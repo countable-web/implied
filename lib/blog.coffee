@@ -91,7 +91,20 @@ module.exports = (app)->
         req: req
         email: req.session.email
         entries: entries
-  
+ 
+  app.get "/admin/blog/send/:id", staff, (req, res) ->
+    mailer = app.get 'mailer'
+    db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, rec) ->
+      db.collection("subscribers").find({}).toArray (err, entries) ->
+        for subscriber in entries
+          if subscriber.email isnt 'null'
+            mailer?.send_mail
+              to: subscriber.email
+              subject: rec.title
+              body: rec.title + "\n\nlink: http://" + (app.get 'host') + "/blog/" + rec.slug_field + "\n\n" + rec.teaser
+        res.redirect "/admin/blog"
+
+
   app.get "/admin/blog/:id", staff, (req, res) ->
     db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, rec) ->
       res.render "admin/blog-add",

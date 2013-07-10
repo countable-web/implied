@@ -16,9 +16,9 @@ implied = module.exports = (app)->
   implied.middleware =
 
     page: (req, res, next)->
-      unless req.method is 'GET'
+      unless (req.method or req.originalMethod) is 'GET'
         return next()
-      pagename = req.path.substr(1)
+      pagename = req.path.substring(1).replace /\/$/, ''
       fs.exists path.join(app.get('dir'), 'views', 'pages', pagename+'.jade'), (exists)->
         if exists
           res.render path.join('pages', pagename),

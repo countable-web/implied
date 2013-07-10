@@ -24,10 +24,10 @@
       page: function(req, res, next) {
         var pagename;
 
-        if (req.method !== 'GET') {
+        if ((req.method || req.originalMethod) !== 'GET') {
           return next();
         }
-        pagename = req.path.substr(1);
+        pagename = req.path.substring(1).replace(/\/$/, '');
         return fs.exists(path.join(app.get('dir'), 'views', 'pages', pagename + '.jade'), function(exists) {
           if (exists) {
             return res.render(path.join('pages', pagename), {

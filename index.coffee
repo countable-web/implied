@@ -99,11 +99,12 @@ implied.boilerplate = (app)->
   if app.get('db')
     app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
 
-  if app.get('csrf') is true
-    app.use(express.csrf())
-    app.use(function (req, res, next) ->
-      res.locals.csrf = req.session._csrf
-      next()
+    if app.get('csrf') is true
+      console.log 'enabling csrf'
+      app.use(express.csrf())
+      app.use (req, res, next) ->
+        res.locals.csrf = req.session._csrf
+        next()
     
   app.use express.methodOverride()
 

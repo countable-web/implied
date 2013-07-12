@@ -85,6 +85,8 @@
   };
 
   implied.boilerplate = function(app) {
+    var helmet;
+
     if (!app.get('dir')) {
       app.set('dir', process.cwd());
     }
@@ -99,6 +101,13 @@
     app.use(express.bodyParser({
       upload_dir: '/tmp'
     }));
+    if (app.get('security_headers') === true) {
+      helmet = require('helmet');
+      app.use(helmet.xframe());
+      app.use(helmet.iexss());
+      app.use(helmet.contentTypeOptions());
+      app.use(helmet.cacheControl());
+    }
     app.use(express.cookieParser());
     if (app.get('db')) {
       app.use(express.session({
@@ -107,6 +116,14 @@
           native_parser: false
         })
       }));
+      if (app.get('csrf') === true) {
+        console.log('enabling csrf');
+        app.use(express.csrf());
+        app.use(function(req, res, next) {
+          res.locals.csrf = req.session._csrf;
+          return next();
+        });
+      }
     }
     app.use(express.methodOverride());
     app.use(express["static"](path.join(app.get('dir'), 'public')));

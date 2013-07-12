@@ -71,14 +71,6 @@ module.exports = (app)->
           console.error err
           console.error "results were:", results
         return callback()
-  
-  # Video detail view
-  app.get "/videos/:id", (req,res) ->
-    db.collection('videos').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
-      console.log err if err
-
-      res.render "videos/video-entry",
-        entry: entry
 
   # Get public videos filtered by keywords if query is provided.
   app.get "/videos", (req,res) ->
@@ -93,7 +85,7 @@ module.exports = (app)->
 
     db.collection('videos').find(filter).sort({title : 1}).toArray (err, video_articles) ->
       console.log video_articles
-      res.render 'videos/video-entries',
+      res.render 'videos',
         video_articles: video_articles
   
   add_video = (req, res) ->

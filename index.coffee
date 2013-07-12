@@ -7,8 +7,7 @@ async = require 'async'
 
 express = require 'express'
 mongolian = require 'mongolian'
-MongoStore = require('express-session-mongo')
-
+MongoStore = require 'express-session-mongo'
 
 implied = module.exports = (app)->
   
@@ -86,11 +85,26 @@ implied.boilerplate = (app)->
   app.set "view engine", "jade"
   #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})
+  
+  # Use helmet?
+  if app.get('security_headers') is true
+    helmet = require 'helmet'
+    app.use(helmet.xframe())
+    app.use(helmet.iexss())
+    app.use(helmet.contentTypeOptions())
+    app.use(helmet.cacheControl())
+  
   app.use express.cookieParser()
   
   if app.get('db')
     app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
 
+  if app.get('csrf') is true
+    app.use(express.csrf())
+    app.use(function (req, res, next) ->
+      res.locals.csrf = req.session._csrf
+      next()
+    
   app.use express.methodOverride()
 
   app.use express.static path.join app.get('dir'), 'public'

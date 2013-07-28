@@ -72,21 +72,6 @@ module.exports = (app)->
           console.error "results were:", results
         return callback()
 
-  # Get public videos filtered by keywords if query is provided.
-  app.get "/videos", (req,res) ->
-
-    filter = $and: [
-      public_visible: 'on'
-    ,
-      "keywords":
-        $regex: req.query.search
-        $options: "i"
-    ]
-
-    db.collection('videos').find(filter).sort({title : 1}).toArray (err, video_articles) ->
-      console.log video_articles
-      res.render 'videos',
-        video_articles: video_articles
   
   add_video = (req, res) ->
     res.render "admin/video-add",

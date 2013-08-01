@@ -6,7 +6,7 @@ class Mailer extends base.Mailer
 
   constructor: (app)->
     super
-    @sendgrid = new (require("sendgrid").SendGrid) @app.get('email_username'), @app.get 'email_password'
+    @sendgrid = (new require("sendgrid")) @app.get('email_username'), @app.get 'email_password'
 
   # Send an email.
   #
@@ -20,8 +20,17 @@ class Mailer extends base.Mailer
       text: opts.body
       headers:
         'X-SMTPAPI': '{"category": '+(@app.get 'name')+'}'
-      
-    @sendgrid.send util.extend({},defaults,opts), (success, message) ->
+    
+    files = opts.files or []
+    delete opts.files
+
+    email = new @sendgrid.Email util.extend {}, defaults, opts
+
+    console.log files
+    for file in files
+      email.addFile file
+
+    @sendgrid.send email, (success, message) ->
       console.error message unless success
       callback?(success, message)
 

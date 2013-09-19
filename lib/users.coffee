@@ -85,19 +85,19 @@ me = module.exports = (app, opts)->
         req.body.password = md5(req.body.password + salt)
       else
         flash req, "error", "Please enter a username and password."
-        return res.render 'signup'
+        return res.render 'pages/signup'
 
       # Validate the email address.
       unless /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test req.body.email
         flash req, "error", "Invalid email address."
-        return res.render 'signup'
+        return res.render 'pages/signup'
 
       complete = (errs)->
 
         if errs and errs.length
           for err in errs
             flash req, 'error', err
-          return res.render 'signup'
+          return res.render 'pages/signup'
 
         # Check if user exists.
         Users.find({email: req.body.email}).toArray (err, users)->
@@ -123,7 +123,7 @@ me = module.exports = (app, opts)->
               
           else
             flash req, "error", "That user already exists."
-            res.render 'signup'
+            res.render 'pages/signup'
 
       validator = app.get 'user_signup_validator'
       if validator
@@ -170,7 +170,7 @@ me = module.exports = (app, opts)->
           goto_then req, res
         else
           flash req, "error", "No user with that email address was found."
-          res.render 'reset-password-submit'
+          res.render 'pages/reset-password-submit'
 
     app.post "/reset-password-confirm", (req,res)->
       if req.session.email

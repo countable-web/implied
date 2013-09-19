@@ -23,7 +23,9 @@ class Mailer extends base.Mailer
       
     @sendgrid.send util.extend({},defaults,opts), (success, message) ->
       console.error message unless success
-      callback?(success, message)
+      err = null
+      if not success then err = message
+      callback?(err)
 
 module.exports = (app)->
   app.set 'mailer', new Mailer app

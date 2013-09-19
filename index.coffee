@@ -7,7 +7,8 @@ async = require 'async'
 
 express = require 'express'
 mongolian = require 'mongolian'
-MongoStore = require 'express-session-mongo'
+#MongoStore = require 'express-session-mongo'
+MongoStore = require('connect-mongo')(express)
 
 implied = module.exports = (app)->
   
@@ -96,11 +97,15 @@ implied.boilerplate = (app)->
   
   app.use express.cookieParser()
   
-  if app.get('db')
-    app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
+  if app.get('db_name')
+    #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
+    app.use express.session
+      secret: (app.get 'secret') or "UNSECURE-STRING",
+      store: new MongoStore
+        db: app.get('db_name')
+
 
     if app.get('csrf') is true
-      console.log 'enabling csrf'
       app.use(express.csrf())
       app.use (req, res, next) ->
         res.locals.csrf = req.session._csrf

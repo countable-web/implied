@@ -2,7 +2,7 @@ md5 = require 'MD5'
 uuid = require 'node-uuid'
 events = require 'events'
 util = require '../util'
-ObjectId =  require('mongolian').ObjectId
+ObjectId = require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
     

@@ -1,0 +1,18 @@
+!!! 5
+html
+  head
+    title!= title
+  body
+    ul
+      for rec in records
+        li
+          a(href='/admin/' + req.params.collection + '/' + rec._id)
+            if form && form.print
+              != ' '+(rec[form.print]||'')
+            else
+              for val, key in rec
+                if val.length < 32
+                  | | #{key}:#{val}
+
+    button
+      a(href='/admin/'+req.params.collection+'/add') Add

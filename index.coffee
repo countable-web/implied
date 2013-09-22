@@ -17,11 +17,34 @@ implied = module.exports = (app)->
     page: (req, res, next)->
       unless (req.method or req.originalMethod) is 'GET'
         return next()
+
       pagename = req.path.substring(1).replace /\/$/, ''
+
       fs.exists path.join(app.get('dir'), 'views', 'pages', pagename+'.jade'), (exists)->
         if exists
           res.render path.join('pages', pagename),
             req: req
+        else
+          next()
+
+    # CMS
+    cms: (req, res, next)->
+
+      db = app.get 'db'
+
+      unless (req.method or req.originalMethod) is 'GET'
+        return next()
+
+      pagename = req.path.substring(1).replace /\/$/, ''
+
+      db.collection('cms').findOne {page: pagename}, (err, page)->
+        if page
+          # Override CMS.jade?
+          fs.exists path.join(app.get('dir'), 'views', 'cms', pagename+'.jade'), (exists)->
+            if exists
+              res.render path.join('cms', pagename), page
+            else
+              res.render path.join('cms', 'cms.jade'), page
         else
           next()
 
@@ -33,7 +56,7 @@ implied = module.exports = (app)->
 
     plugin_instance = undefined # The instance to register.
     plugin_name = opts.plugin_name # The name to register under.
-
+ 
     # Initialize the plugin
     # ---------------------
 
@@ -54,7 +77,7 @@ implied = module.exports = (app)->
     # A function, simlpy call it with the app, and it can do what it pleases.
     else if typeof plugin is 'function'
       plugin app, opts
-
+      plugin_instance = plugin
     else
       throw "Usage: app.plugin( plugin ) where plugin is of type <String> | <Function> | <Array of plugins> , but you used app.plugin(" + typeof plugin + ")"
 
@@ -118,19 +141,21 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
+  app.use implied.middleware.cms
   app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })
 
-implied.util = require './util'
 
+
+implied.util = require './util'
 implied.blog = require './lib/blog'
 implied.videos = require './lib/videos'
 implied.users = require './lib/users'
 implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'
 implied.sendgrid = require './lib/mail/sendgrid'
-
+implied.multi_views = require './lib/multi_views'
 
 

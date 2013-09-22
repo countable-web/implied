@@ -1,0 +1,36 @@
+!!! 5
+html
+  head
+    title!= "object"
+  body
+    if rec
+      form(method='post')
+        if form
+          for field, idx in form.fields
+            - var name=field.name
+            br
+            label(for=name) #{name}
+            if field.type == 'textarea'
+              textarea(name=name,placeholder=name) #{rec[name]}
+            else
+              input(value=rec[name], type=field.type || 'text', name=name, placeholder=name)
+        else
+          for val, key in rec
+            if key != "_id"
+
+              br
+              label(for=key) #{key}
+              if typeof val === 'number'
+                input(name=key, type='number', placeholder=key, value=val)
+              if val && val.length < 64
+                input(name=key, type='text', placeholder=key, value=val)
+              else
+                textarea(name=key,placeholder=key) #{val}
+        .btn-group
+          button.btn.btn-success(type='submit') Save
+          button.btn(onclick='window.history.back()') Cancel
+          if req.params.id
+            button
+              a(href="/admin/" + req.params.collection + "/" + req.params.id + "/del") Delete
+    else
+      .alert.alert-error Object not found

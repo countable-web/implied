@@ -12,6 +12,6 @@
     "MD5": "~1.0.3",
     "mongolian": "~0.1.18",
     "node-uuid": "~1.4.0",
-    "express-session-mongo": "0.0.1"
+    "connect-mongo": "*"
   }
 }

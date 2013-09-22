@@ -1,0 +1,8 @@
+extends admin-base
+
+
+block body
+  ul
+  for collection in collections
+    li
+      a(href="/admin/"+collection)!= collection

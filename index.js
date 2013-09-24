@@ -16,7 +16,7 @@
 
   mongolian = require('mongolian');
 
-  MongoStore = require('express-session-mongo');
+  MongoStore = require('connect-mongo')(express);
 
   implied = module.exports = function(app) {
     app.set('implied', implied);
@@ -101,8 +101,11 @@
 
   implied.mongo = function(app) {
     var server;
+    if (!app.get('db_name')) {
+      app.set('db_name', app.get('app_name'));
+    }
     server = new mongolian();
-    return app.set('db', server.db((app.get('db_name')) || app.get('app_name')));
+    return app.set('db', server.db(app.get('db_name')));
   };
 
   implied.boilerplate = function(app) {
@@ -129,15 +132,14 @@
       app.use(helmet.cacheControl());
     }
     app.use(express.cookieParser());
-    if (app.get('db')) {
+    if (app.get('db_name')) {
       app.use(express.session({
         secret: (app.get('secret')) || "UNSECURE-STRING",
         store: new MongoStore({
-          native_parser: false
+          db: app.get('db_name')
         })
       }));
       if (app.get('csrf') === true) {
-        console.log('enabling csrf');
         app.use(express.csrf());
         app.use(function(req, res, next) {
           res.locals.csrf = req.session._csrf;

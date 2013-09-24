@@ -6,7 +6,7 @@ class Mailer extends base.Mailer
 
   constructor: (app)->
     super
-    @sendgrid = (new require("sendgrid")) @app.get('email_username'), @app.get 'email_password'
+    @sendgrid = require("sendgrid")(@app.get('email_username'), @app.get 'email_password')
 
   # Send an email.
   #
@@ -26,7 +26,6 @@ class Mailer extends base.Mailer
 
     email = new @sendgrid.Email util.extend {}, defaults, opts
 
-    console.log files
     for file in files
       email.addFile file
 

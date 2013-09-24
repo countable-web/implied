@@ -14,7 +14,6 @@
     "node-uuid": "~1.4.0",
     "connect-mongo": "*",
     "async": "~0.2.9",
-    "express-session-mongo": "0.0.2",
     "jquery": "~1.8.3",
     "sendgrid": "~0.3.0-rc.1.8"
   }

@@ -90,9 +90,10 @@ implied = module.exports = (app)->
       app.set 'plugins', registered_plugins
 
 implied.mongo = (app)->
-
+  unless app.get 'db_name'
+    app.set 'db_name', app.get 'app_name'
   server = new mongolian()
-  app.set 'db', server.db (app.get 'db_name') or app.get 'app_name'
+  app.set 'db', server.db app.get 'db_name'
 
 implied.boilerplate = (app)->
   
@@ -119,8 +120,8 @@ implied.boilerplate = (app)->
     app.use(helmet.cacheControl())
   
   app.use express.cookieParser()
-  
-  if app.get('db_name')
+
+  if app.get 'db_name'
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
     app.use express.session
       secret: (app.get 'secret') or "UNSECURE-STRING",

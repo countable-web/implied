@@ -101,8 +101,11 @@
 
   implied.mongo = function(app) {
     var server;
+    if (!app.get('db_name')) {
+      app.set('db_name', app.get('app_name'));
+    }
     server = new mongolian();
-    return app.set('db', server.db((app.get('db_name')) || app.get('app_name')));
+    return app.set('db', server.db(app.get('db_name')));
   };
 
   implied.boilerplate = function(app) {

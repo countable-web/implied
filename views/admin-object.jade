@@ -31,6 +31,6 @@ html
           button.btn(onclick='window.history.back()') Cancel
           if req.params.id
             button
-              a(href="/admin/" + req.params.collection + "/" + req.params.id + "/del") Delete
+              a(href="/mongo-admin/" + req.params.collection + "/" + req.params.id + "/del") Delete
     else
       .alert.alert-error Object not found

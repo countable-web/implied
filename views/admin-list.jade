@@ -6,7 +6,7 @@ html
     ul
       for rec in records
         li
-          a(href='/admin/' + req.params.collection + '/' + rec._id)
+          a(href='/mongo-admin/' + req.params.collection + '/' + rec._id)
             if form && form.print
               != ' '+(rec[form.print]||'')
             else
@@ -15,4 +15,4 @@ html
                   | | #{key}:#{val}
 
     button
-      a(href='/admin/'+req.params.collection+'/add') Add
+      a(href='/mongo-admin/'+req.params.collection+'/add') Add

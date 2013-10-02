@@ -25,7 +25,7 @@ module.exports = (app, opts={})->
     template_base = path.join(__dirname, "..", "views")
     
     # List of all collections.
-    app.get "/admin", staff, (req,res) ->
+    app.get "/admin/_collections", staff, (req,res) ->
       db.collectionNames (err, collections)->
         res.render path.join(template_base, "admin"),
           collections: collections

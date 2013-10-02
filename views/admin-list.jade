@@ -11,7 +11,7 @@ html
               != ' '+(rec[form.print]||'')
             else
               for val, key in rec
-                if val.length < 32
+                if val && val.length < 32
                   | | #{key}:#{val}
 
     button

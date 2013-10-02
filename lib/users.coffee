@@ -35,6 +35,8 @@ me = module.exports = (app, opts)->
       req.session.email = user.email
       req.session.admin = user.admin
       req.session.user = user
+      # This user won't have to log in for a 2 weeks
+      req.session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
 
     # Forward a request based on "then" hints in it.
     goto_then = (req,res)->

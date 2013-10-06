@@ -5,6 +5,7 @@ util = require '../util'
 ObjectId = require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
+
     
     salt = app.get('secret') ? 'secret-the-cat'
     if not app.get 'welcome_email'
@@ -14,6 +15,7 @@ me = module.exports = (app, opts)->
     mailer = app.get 'mailer'
     Users = db.collection 'users'
     login_url = "/login"
+
 
     # Ensure a user is a staff member (has admin flag)
     me.staff = (req, res, next) ->
@@ -29,18 +31,141 @@ me = module.exports = (app, opts)->
         res.redirect login_url + "?then=" + req.path
 
     flash = (require '../util').flash
+
     
+    # Forward a request based on "then" hints in it.
+    goto_then = (req, res)->
+      res.redirect req.query.then or req.body.then or '/'
+
+    
+    goto_error = (req, res)->
+      res.redirect req.query.onerror or req.body.onerror or req.path
+
+
     # User succeeded in authenticating.
-    auth_success = (req, user)->
+    login_success = (req, user)->
       req.session.email = user.email
       req.session.admin = user.admin
       req.session.user = user
       # This user won't have to log in for a 2 weeks
       req.session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
 
-    # Forward a request based on "then" hints in it.
-    goto_then = (req,res)->
-      res.redirect req.query.then or req.body.then or '/'
+
+    # Generic login function, used with any HTTP based transport.
+    login = (req, callback)->
+      # Email and password provided using any request method, GET, POST or url params.
+      email = req.param 'email'
+      password = req.param 'password'
+      Users.findOne
+        email: email.replace(" ", "").toLowerCase()
+        $or: [
+          {password: password}
+          {password: md5(password + salt)}
+        ]
+      , (err, user)->
+        if user
+          # If this app requires email confirmation, enforce it.
+          if not user.confirmed and app.get 'email_confirm'
+            callback
+              success: false
+              message: 'Please confirm your email address before logging in.'
+          else
+            login_success req, user
+            callback
+              success: true
+              message: 'You have been logged in.'
+        else
+          callback
+            success: false
+            message: 'Email or password incorrect.'
+
+
+    signup = (req, callback)->
+      
+      user = {}
+
+      for own k,v of req.query
+        user[k] = v
+
+      for own k,v of req.body
+        user[k] = v
+
+      user.email = user.email.replace(" ", "").toLowerCase()
+
+      user.confirmed = false
+      user.email_confirmation_token = uuid.v4()
+      
+      unless user.email and user.password
+        callback
+          success: false
+          message: "Please enter a username and password."
+
+      user.password = md5(user.password + salt)
+
+      # Validate the email address.
+      unless /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test user.email
+        callback
+          success: false
+          message: "Invalid email address."
+      
+      # Called after other signup validation.
+      complete = (errs)->
+
+        if errs and errs.length
+          callback
+            success: false
+            message: ",".join errs
+
+        # Check if user exists.
+        Users.find({email: user.email}).toArray (err, users)->
+
+          if users.length is 0
+
+            Users.insert user, (err, user)->
+
+              if err
+                return callback
+                  success: false
+                  message: err
+
+              mailer?.send_mail
+                to: user.email
+                subject: app.get("welcome_email_subject") or "Welcome!"
+                body: util.format app.get("welcome_email"),
+                  first_name: user.first_name or user.email
+                  confirm_link: "http://" + (app.get 'host') + "/confirm_email?token=" + user.email_confirmation_token
+              
+              # User creation event.
+              me.emitter.emit 'signup', user
+
+              # If no confirmation is required, sign the person in.
+              if app.get 'email_confirm'
+                callback
+                  success: true
+                  message: 'Thanks for signing up! Please follow the instructions in your welcome email.'
+              else
+                login_success req, user
+                callback
+                  success: true
+                  message: 'Thanks for signing up!'
+              
+          else
+            callback
+              success: false
+              message: "That user already exists."
+
+      validator = app.get 'user_signup_validator'
+      if validator
+        validator req, complete
+      else
+        complete null
+
+
+    logout = (req)->
+      req.session.email = null
+      req.session.admin = null
+      req.session.user = null
+
 
     # Log in
     # HTTP API:
@@ -50,8 +175,17 @@ me = module.exports = (app, opts)->
     # @param password - the user's password.
     app.post "/login", (req,res) ->
 
-      req.body.email = req.body.email.toLowerCase()
-      
+      login req, (result)->
+
+        if result.success
+          flash req, "success", result.message
+          goto_then req, res
+        else
+          flash req, "error", result.message
+          goto_error req, res
+
+
+      ###
       Users.findOne
         email: req.body.email
         $or: [
@@ -70,15 +204,40 @@ me = module.exports = (app, opts)->
         else
           flash req, "error", "Email or password incorrect."
           res.redirect req.body.onerror or req.path
+      ###
+
 
     app.get "/logout", (req, res) ->
-      req.session.email = null
-      req.session.admin = null
-      req.session.user = null
+      logout req
       flash req, "success", "You've been safely logged out"
       goto_then req, res
 
-    app.post "/signup", (req,res) ->
+
+    app.post "/signup", (req, res) ->
+
+      signup req, (result)->
+
+        if result.success
+          flash req, "success", result.message
+          goto_then req, res
+
+        else
+          flash req, "error", result.message
+          goto_error req, res
+
+
+    app.get "/login.json", (req, res) ->
+
+      login req, (result)->
+        res.send result
+
+
+    app.get "/signup.json", (req, res) ->
+
+      signup req, (result)->
+        res.send result
+
+      ###
       req.body.email = req.body.email.toLowerCase()
       req.body.confirmed = false
       req.body.email_confirmation_token = uuid.v4()
@@ -110,7 +269,7 @@ me = module.exports = (app, opts)->
               if app.get 'email_confirm'
                 flash req, 'success', 'Thanks for signing up! Please follow the instructions in your welcome email.'
               else
-                auth_success req, user
+                login_success req, user
 
               mailer?.send_mail(
                 to: user.email
@@ -132,11 +291,13 @@ me = module.exports = (app, opts)->
         validator req, complete
       else
         complete null
-    
+      ###
+
     server_path = (req)->
       url = req.protocol + "://" + req.host
       if req.port and req.port isnt 80 then url += ":" + req.port
       url
+
 
     # Email Confirmation
     app.get "/confirm_email", (req, res)->
@@ -147,11 +308,14 @@ me = module.exports = (app, opts)->
       Users.update query, {$set:{confirmed:true}}, (err) ->
         if err
           flash req, 'error', 'Email confirmation failed'
+          goto_then req, res
         else
           Users.findOne query, (err, user)->
-            auth_success req, user
-          flash req, 'success', 'Email confirmed'
-        goto_then req, res
+            login_success req, user
+            if user
+              flash req, 'success', 'Email confirmed'
+            goto_then req,res
+
 
     # Password Forgotten
     app.post "/reset-password-submit", (req,res)->
@@ -174,6 +338,7 @@ me = module.exports = (app, opts)->
           flash req, "error", "No user with that email address was found."
           res.render 'pages/reset-password-submit'
 
+
     app.post "/reset-password-confirm", (req,res)->
       if req.session.email
         query = {email: req.session.email}
@@ -186,9 +351,12 @@ me = module.exports = (app, opts)->
           flash req, 'success', 'Password was reset'
         goto_then req, res
 
+
+    # User imitation. Allows staff to simulate other users for debugging.
+    # Hopefully not used for anything too devious.
     app.get "/become-user/:id", me.staff, (req,res)->
       Users.findOne {_id: new ObjectId(req.params.id)}, (err, user)->
-        auth_success req, user
+        login_success req, user
         goto_then req, res
 
 

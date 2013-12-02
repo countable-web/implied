@@ -121,6 +121,9 @@
     }
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
+    app.configure('development', function() {
+      return app.locals.pretty = true;
+    });
     app.use(express.bodyParser({
       upload_dir: '/tmp'
     }));

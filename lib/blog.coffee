@@ -3,6 +3,7 @@ path = require 'path'
 fs = require 'fs'
 async = require 'async'
 util = require '../util'
+_ = require 'underscore'
 
 module.exports = (app)->
   
@@ -41,10 +42,18 @@ module.exports = (app)->
       public_visible: 'on'
     if req.query.category
       #filter.category = { $all: [req.query.category] }
-      filter.category = req.query.category
+      children = _.where app.locals.TAGS, {parent: req.query.category}
+      children = ( {category: c._id} for c in children)
+      if children.length
+        children.push
+          category: req.query.category
+        filter['$or'] = children
+      else
+        filter.category = req.query.category
+    console.log filter
     pagenum = 1*(req.query.page or 1)
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1, edit_1:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
-      db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
+      db.collection('blog').find(filter, {title:1, image:1, pub_date:1, teaser:1, edit_1:1, name:1, category:1}).sort({pub_date : -1}).skip(PAGE_SIZE*(pagenum-1)).limit(PAGE_SIZE+1).toArray (err, blog_articles) ->
         res.render 'blog/blog-entries',
           req: req
           email: req.session.email
@@ -57,7 +66,6 @@ module.exports = (app)->
     db.collection('blog').find({public_visible: 'on'}, {title:1, image:1}).sort({pub_date : -1}).limit(NUM_PREVIEWS).toArray (err, blog_teasers) ->
       db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, entry)->
         console.error err if err
-
         unless entry
           res.status(404).render '404'
         else
@@ -104,7 +112,6 @@ module.exports = (app)->
               body: rec.title + "\n\nlink: http://" + (app.get 'host') + "/blog/" + rec.slug_field + "\n\n" + rec.teaser
         res.redirect "/admin/blog"
 
-
   app.get "/admin/blog/:id", staff, (req, res) ->
     db.collection('blog').findOne {$or: [{_id: req.params.id}, {slug_field: req.params.id}]}, (err, rec) ->
       res.render "admin/blog-add",
@@ -114,7 +121,6 @@ module.exports = (app)->
         email: req.session.email
         rec: rec
         category: rec.category
-
 
   process_save = (req, callback)->
     filePath = path.join(upload_dir, "site/blog/")

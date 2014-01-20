@@ -112,6 +112,7 @@ implied.boilerplate = (app)->
     app.locals.pretty = true
     #app.locals.compileDebug = true
     #app.locals.debug = true
+    
   #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})
   

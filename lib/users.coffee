@@ -110,11 +110,10 @@ me = module.exports = (app, opts)->
       
       # Called after other signup validation.
       complete = (errs)->
-
         if errs and errs.length
           callback
             success: false
-            message: ",".join errs
+            message: errs.join ","
 
         # Check if user exists.
         Users.find({email: user.email}).toArray (err, users)->

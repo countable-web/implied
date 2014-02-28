@@ -35,7 +35,8 @@ me = module.exports = (app, opts)->
     
     # Forward a request based on "then" hints in it.
     goto_then = (req, res)->
-      res.redirect req.query.then or req.body.then or '/'
+      console.log 'goto', req.query._then, req.body._then, '/'
+      res.redirect req.query._then or req.body._then or '/'
 
     
     goto_error = (req, res)->
@@ -51,16 +52,39 @@ me = module.exports = (app, opts)->
       req.session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
 
 
+    # create a query for fetching a user based on an http request.
+    # Note: lookups are cast to lowercase under the assumption they're stored that way.
+    # @param params.username
+    # @param params.email
+    build_lookup_query = (params)->
+      q = {
+        $or:[]
+      }
+      if typeof params.username is 'string'
+        q.$or.push {username: params.username.replace(/\s/g, "").toLowerCase()}
+        q.$or.push {email: params.username.replace(/\s/g, "").toLowerCase()}
+      if typeof params.email is 'string'
+        q.$or.push {username: params.email.replace(/\s/g, "").toLowerCase()}
+        q.$or.push {email: params.email.replace(/\s/g, "").toLowerCase()}
+      q
+
     # Generic login function, used with any HTTP based transport.
     login = (req, callback)->
       # Email and password provided using any request method, GET, POST or url params.
-      email = req.param 'email'
+      lookup = build_lookup_query
+        username: req.param 'username'
+        email: req.param 'email'
+
       password = req.param 'password'
+
       Users.findOne
-        email: email.replace(" ", "").toLowerCase()
-        $or: [
-          {password: password}
-          {password: md5(password + salt)}
+        $and: [
+          lookup
+        ,
+          $or: [
+            {password: password}
+            {password: md5(password + salt)}
+          ]
         ]
       , (err, user)->
         if user
@@ -85,13 +109,14 @@ me = module.exports = (app, opts)->
       user = {}
 
       for own k,v of req.query
-        user[k] = v
+        if k.substr(0,1) isnt '_'
+          user[k] = v
 
       for own k,v of req.body
-        user[k] = v
+        if k.substr(0,1) isnt '_'
+          user[k] = v
 
       user.email = user.email.replace(" ", "").toLowerCase()
-
       user.confirmed = false
       user.email_confirmation_token = uuid.v4()
       
@@ -115,8 +140,12 @@ me = module.exports = (app, opts)->
             success: false
             message: errs.join ","
 
+        lookup = build_lookup_query user
+
         # Check if user exists.
-        Users.find({email: user.email}).toArray (err, users)->
+        Users.find(
+          lookup
+        ).toArray (err, users)->
 
           if users.length is 0
 

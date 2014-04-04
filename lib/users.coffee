@@ -6,7 +6,6 @@ ObjectId = require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
 
-    
     salt = app.get('secret') ? 'secret-the-cat'
     if not app.get 'welcome_email'
       app.set 'welcome_email', "Thanks for signing up for " + app.get("app_name")
@@ -15,7 +14,6 @@ me = module.exports = (app, opts)->
     mailer = app.get 'mailer'
     Users = db.collection 'users'
     login_url = "/login"
-
 
     # Ensure a user is a staff member (has admin flag)
     me.staff = (req, res, next) ->
@@ -35,7 +33,6 @@ me = module.exports = (app, opts)->
     
     # Forward a request based on "then" hints in it.
     goto_then = (req, res)->
-      console.log 'goto', req.query._then, req.body._then, '/'
       res.redirect req.query._then or req.body._then or '/'
 
     
@@ -48,6 +45,7 @@ me = module.exports = (app, opts)->
       req.session.email = user.email
       req.session.admin = user.admin
       req.session.user = user
+      req.session.user._id = user._id.toString()
       # This user won't have to log in for a 2 weeks
       req.session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
 
@@ -110,11 +108,11 @@ me = module.exports = (app, opts)->
 
       for own k,v of req.query
         if k.substr(0,1) isnt '_'
-          user[k] = v
+          user[k] = me.sanitize v
 
       for own k,v of req.body
         if k.substr(0,1) isnt '_'
-          user[k] = v
+          user[k] = me.sanitize v
 
       user.email = user.email.replace(" ", "").toLowerCase()
       user.confirmed = false
@@ -132,7 +130,7 @@ me = module.exports = (app, opts)->
         callback
           success: false
           message: "Invalid email address."
-      
+
       # Called after other signup validation.
       complete = (errs)->
         if errs and errs.length
@@ -213,28 +211,6 @@ me = module.exports = (app, opts)->
           goto_error req, res
 
 
-      ###
-      Users.findOne
-        email: req.body.email
-        $or: [
-          {password: req.body.password}
-          {password: md5(req.body.password + salt)}
-        ]
-      , (err, user)->
-        if user
-          if not user.confirmed and app.get 'email_confirm'
-            flash req, 'error', 'Please confirm your email address.'
-            res.redirect req.body.onerror or req.path
-          else
-            auth_success req, user
-            flash req, "success", "You've been logged in."
-            goto_then req, res
-        else
-          flash req, "error", "Email or password incorrect."
-          res.redirect req.body.onerror or req.path
-      ###
-
-
     app.get "/logout", (req, res) ->
       logout req
       flash req, "success", "You've been safely logged out"
@@ -265,61 +241,6 @@ me = module.exports = (app, opts)->
       signup req, (result)->
         res.send result
 
-      ###
-      req.body.email = req.body.email.toLowerCase()
-      req.body.confirmed = false
-      req.body.email_confirmation_token = uuid.v4()
-      
-      if req.body.email and req.body.password
-        req.body.password = md5(req.body.password + salt)
-      else
-        flash req, "error", "Please enter a username and password."
-        return res.render 'pages/signup'
-
-      # Validate the email address.
-      unless /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test req.body.email
-        flash req, "error", "Invalid email address."
-        return res.render 'pages/signup'
-
-      complete = (errs)->
-
-        if errs and errs.length
-          for err in errs
-            flash req, 'error', err
-          return res.render 'pages/signup'
-
-        # Check if user exists.
-        Users.find({email: req.body.email}).toArray (err, users)->
-
-          if users.length is 0
-            Users.insert req.body, (err, user)->
-              # If no confirmation is required, sign the person in.
-              if app.get 'email_confirm'
-                flash req, 'success', 'Thanks for signing up! Please follow the instructions in your welcome email.'
-              else
-                login_success req, user
-
-              mailer?.send_mail(
-                to: user.email
-                subject: app.get("welcome_email_subject") or "Welcome!"
-                body: util.format app.get("welcome_email"),
-                  first_name: user.first_name or user.email
-                  confirm_link: "http://" + (app.get 'host') + "/confirm_email?token=" + user.email_confirmation_token
-              )
-              # User creation event.
-              me.emitter.emit 'signup', user
-              goto_then req, res
-              
-          else
-            flash req, "error", "That user already exists."
-            res.render 'pages/signup'
-
-      validator = app.get 'user_signup_validator'
-      if validator
-        validator req, complete
-      else
-        complete null
-      ###
 
     server_path = (req)->
       url = req.protocol + "://" + req.host
@@ -389,3 +310,15 @@ me = module.exports = (app, opts)->
 
 
 me.emitter = new events.EventEmitter()
+
+# Ensure a user is a member
+me.restrict = (req, res, next) ->
+  if req.session.email
+    next()
+  else
+    res.redirect "/login" + "?then=" + req.path
+
+
+
+me.sanitize = (s)->
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')

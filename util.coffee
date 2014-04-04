@@ -42,4 +42,9 @@ module.exports =
   format: (str, dict)->
     str.replace /\{([^\}]+)\}/g, (match, $1)->
       dict[$1] or ''
-
+  
+  zpad: (num, zeros=0)->
+    num = ''+num
+    while num.length < zeros
+      num = '0' + num
+    num

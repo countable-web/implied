@@ -64,6 +64,16 @@
       return str.replace(/\{([^\}]+)\}/g, function(match, $1) {
         return dict[$1] || '';
       });
+    },
+    zpad: function(num, zeros) {
+      if (zeros == null) {
+        zeros = 0;
+      }
+      num = '' + num;
+      while (num.length < zeros) {
+        num = '0' + num;
+      }
+      return num;
     }
   };
 

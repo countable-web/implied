@@ -42,7 +42,7 @@ me = module.exports = (app, opts)->
 
     # User succeeded in authenticating.
     login_success = (req, user)->
-      req.session.email = user.email
+      req.session.email = user.email or "no email"
       req.session.admin = user.admin
       req.session.user = user
       req.session.user._id = user._id.toString()

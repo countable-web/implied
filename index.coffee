@@ -109,9 +109,9 @@ implied.boilerplate = (app)->
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
   app.configure 'development', ->
-    app.locals.pretty = true 
+    app.locals.pretty = true
+    app.locals.development = true
     #app.locals.compileDebug = true
-    #app.locals.debug = true
     
   #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})

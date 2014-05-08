@@ -122,7 +122,8 @@
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
     app.configure('development', function() {
-      return app.locals.pretty = true;
+      app.locals.pretty = true;
+      return app.locals.development = true;
     });
     app.use(express.bodyParser({
       upload_dir: '/tmp'
@@ -151,6 +152,12 @@
       }
     }
     app.use(express.methodOverride());
+    app.use(function(req, res, next) {
+      if (req.query.referrer) {
+        req.session.referrer = req.query.referrer;
+      }
+      return next();
+    });
     app.use(express["static"](path.join(app.get('dir'), 'public')));
     app.use(express["static"](app.get("upload_dir")));
     app.locals.process = process;

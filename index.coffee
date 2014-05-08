@@ -142,6 +142,11 @@ implied.boilerplate = (app)->
     
   app.use express.methodOverride()
 
+  app.use (req, res, next)->
+    if req.query.referrer
+      req.session.referrer = req.query.referrer
+    next()
+
   app.use express.static path.join app.get('dir'), 'public'
   app.use express.static app.get "upload_dir"
 

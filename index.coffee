@@ -6,7 +6,8 @@ path = require 'path'
 async = require 'async'
 
 express = require 'express'
-mongolian = require 'mongolian'
+#mongolian = require 'mongolian'
+mongojs = require 'mongojs'
 #MongoStore = require 'express-session-mongo'
 MongoStore = require('connect-mongo')(express)
 
@@ -92,8 +93,9 @@ implied = module.exports = (app)->
 implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
-  server = new mongolian()
-  app.set 'db', server.db app.get 'db_name'
+  #server = new mongolian()
+  #app.set 'db', server.db app.get 'db_name'
+  app.set 'db', mongojs app.get 'db_name'
 
 implied.boilerplate = (app)->
   

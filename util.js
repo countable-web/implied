@@ -32,9 +32,6 @@
         throws = true;
       }
       return exec(command, function(error, stdout, stderr) {
-        if (stdout) {
-          console.log("stdout: " + stdout);
-        }
         if (stderr && throws) {
           console.error(command);
           throw "stderr: " + stderr;
@@ -78,5 +75,3 @@
   };
 
 }).call(this);
-
-//# sourceMappingURL=util.map

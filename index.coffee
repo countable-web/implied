@@ -123,6 +123,12 @@ implied.boilerplate = (app)->
 
   if app.get 'db_name'
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
+    store_opts =
+      db: app.get 'db_name'
+    if app.get('db_password')
+      store_opts.username = app.get 'db_username'
+      store_opts.password = app.get 'db_password'
+
     app.use express.session
       secret: (app.get 'secret') or "UNSECURE-STRING",
       store: new MongoStore

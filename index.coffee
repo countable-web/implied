@@ -6,7 +6,8 @@ path = require 'path'
 async = require 'async'
 
 express = require 'express'
-mongolian = require 'mongolian'
+#mongolian = require 'mongolian'
+mongojs = require 'mongojs'
 #MongoStore = require 'express-session-mongo'
 MongoStore = require('connect-mongo')(express)
 
@@ -92,8 +93,9 @@ implied = module.exports = (app)->
 implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
-  server = new mongolian()
-  app.set 'db', server.db app.get 'db_name'
+  #server = new mongolian()
+  #app.set 'db', server.db app.get 'db_name'
+  app.set 'db', mongojs app.get 'db_name'
 
 implied.boilerplate = (app)->
   
@@ -109,9 +111,9 @@ implied.boilerplate = (app)->
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
   app.configure 'development', ->
-    app.locals.pretty = true 
+    app.locals.pretty = true
+    app.locals.development = true
     #app.locals.compileDebug = true
-    #app.locals.debug = true
     
   #app.use express.limit '300mb'
   app.use express.bodyParser({upload_dir: '/tmp'})
@@ -147,6 +149,11 @@ implied.boilerplate = (app)->
         next()
     
   app.use express.methodOverride()
+
+  app.use (req, res, next)->
+    if req.query.referrer
+      req.session.referrer = req.query.referrer
+    next()
 
   app.use express.static path.join app.get('dir'), 'public'
   app.use express.static app.get "upload_dir"

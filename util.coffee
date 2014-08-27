@@ -17,8 +17,8 @@ module.exports =
 
   syscall: (command, callback, throws=true) ->
     exec command, (error, stdout, stderr) ->
-      if stdout
-        console.log "stdout: " + stdout
+      #if stdout
+      #  console.log "stdout: " + stdout
       if stderr and throws
         console.error command
         throw "stderr: " + stderr

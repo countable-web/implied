@@ -8,6 +8,7 @@ module.exports = (app)->
   mailer = (app.get 'mailer')
 
   app.configure "development", ->
+
     app.use express.errorHandler
       dumpExceptions: true
       showStack: true
@@ -33,13 +34,14 @@ module.exports = (app)->
         callback? "ERROR EMAIL FAILED: ",message
 
   app.configure "production", ->
+
     #app.use express.errorHandler()
     app.use (err, req, res, next)->
 
       message = """Details:
   ========
 
-   - location : #{req.host}#{req.originalUrl}
+   - location : #{req.host}#{req.originalUrl} 
    - xhr : #{req.xhr}
   """
 

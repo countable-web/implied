@@ -28,6 +28,16 @@ app.get('db').collection('mycollection').find({}).toArray(function(items){
 
 ```
 
+### Boilerplate
+
+A reasonable set of defaults for express middleware, for a typical website, so you can usually ignore that stuff. If you do need extra middleware in between the default middleware (ordinally), you won't be able to use this.
+
+```javascript
+
+app.plugin('boilerplate');
+
+```
+
 ### Users
 
 The 'users' module handles user registration, logins and password resets. Users are stored in MongoDB so this depends on the 'mongo' module.
@@ -36,3 +46,13 @@ The 'users' module handles user registration, logins and password resets. Users 
 app.plugin('mongo', 'boilerplate', 'users'); // to install
 ```
 
+### Sendgrid
+
+Provides other modules with a wrapped sendgrid email client, app.get('mailer').
+
+```javascript
+
+app.plugin('sendgrid');
+app.get('mailer').send_mail({to:'test@example.com', subject:'Test', body:'You are reading the contents of a test email... Bored?''});
+
+```

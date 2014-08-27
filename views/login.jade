@@ -1,21 +1,11 @@
-extends account-base
+extends ../layout
 
 block content
-  .pad-left(style='margin-top:20px;margin-bottom:4px;padding-left:35px')
-    .row
-      .span5
-        h1(style="margin-bottom:16px;") Sign into Your Account
-        p(style="margin-bottom:16px;") For users with existing accounts, please sign in with your email and password. 
-        //For new users, fill in the fields below with your desired email and password and click on the Sign Up button below to create a new account.
-        form(method='post', action='/login', autocomplete='off')
-          input.input-medium(type='text', name='email', placeholder='Email')
-          br
-          input.input-medium(type='password', name='password', placeholder='Password')
-          br
-          input(type='hidden', name='then', value=req.query.then || '/dashboard')
-          .span(style="margin-left:-5px;")
-            button.b-button(type='submit')
-              |  LOG IN!
-          .span.pull-right(style='margin-right:-5px')
-            a.pull-right.b-button(href="/signup?free=true") 
-              |  SIGN UP!
+
+  h1 Log in
+  form(method='post')
+    input(type='text', name='email', placeholder='Email')
+    input.input-medium(type='password', name='password', placeholder='Password')
+    input(type='hidden', name='then', value=req.query.then || '/')
+    button(type='submit') Log in
+    a(href="/signup") New? sign up.

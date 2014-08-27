@@ -46,6 +46,13 @@ The 'users' module handles user registration, logins and password resets. Users 
 app.plugin('mongo', 'boilerplate', 'users'); // to install
 ```
 
+You'll need the following views with HTML forms, unless you'd rather use the rest interface.
+
+views/pages/login.jade - contains a form with an input of name "password" and "email", at least.
+views/pages/signup.jade - contains a form with an input of name "password" and "email", at least.
+views/pages/password-reset-submit.jade - contain a form with an input of name "email".
+
+
 ### Sendgrid
 
 Provides other modules with a wrapped sendgrid email client, app.get('mailer').

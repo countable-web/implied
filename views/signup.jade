@@ -1,33 +1,11 @@
+extends ../layout
 
-form.signup(method='POST', action='', autocomplete='off')
+block content
 
-  p.alert.alert-error(style='display:none')
-
-  label(for="email") Email
-  br
-  input.required(required=true, type='text', name='email', placeholder='test@example.com')
-  br
-  label(for="last_name") Password
-  br
-  input.required.password(required=true, type='password', name='password', placeholder='***')
-  br
-  input(type='hidden', name='then', value=req.query.then || '/dashboard')
-  br
-
-  p
-    | By signing up , you agree to these 
-    a(href="/terms", target="_blank") terms of use
-    | .
-
-  button(type='submit') I Agree. Sign up!
-
-  :coffeescript
-
-    $('.signup').submit (e)->
-      e.preventDefault()
-      $.get '/signup.json?' + $('.signup').serialize(), (rsp)->
-        if rsp.success
-          window.location = '/dashboard'
-        else
-          $(".signup .alert-error").show().html rsp.message
-      false
+  h1 Sign up
+  form(method='post')
+    input(type='text', name='email', placeholder='Email')
+    input.input-medium(type='password', name='password', placeholder='Password')
+    input(type='hidden', name='then', value=req.query.then || '/')
+    button(type='submit') Sign up
+    a(href="/login") Already have an account? Log in.

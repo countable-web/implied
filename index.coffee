@@ -111,6 +111,7 @@ implied.boilerplate = (app)->
 
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
+  console.log 'view engine set'
   app.configure 'development', ->
     app.locals.pretty = true
     app.locals.development = true
@@ -165,18 +166,18 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
-  console.log 'what'
-  app.get('db').getCollectionNames (names)->
-    console.log names
-    app.use implied.middleware.cms
+  # if a cms table exists, use the cms middleware.
+  app.get('db').getCollectionNames (err, names)->
+    if names.indexOf('cms') > -1
+      app.use implied.middleware.cms
   
-  fs.exists path.join(app.get 'dir', 'views', 'pages'), (exists)->
+  # if a pages directory exists, use the pages middleware.
+  fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
     if exists
       app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })
-
 
 
 implied.util = require './util'

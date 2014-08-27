@@ -124,6 +124,7 @@
     }
     app.set("views", path.join(app.get('dir'), "views"));
     app.set("view engine", "jade");
+    console.log('view engine set');
     app.configure('development', function() {
       app.locals.pretty = true;
       return app.locals.development = true;
@@ -173,12 +174,12 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
-    console.log('what');
-    app.get('db').getCollectionNames(function(names) {
-      console.log(names);
-      return app.use(implied.middleware.cms);
+    app.get('db').getCollectionNames(function(err, names) {
+      if (names.indexOf('cms') > -1) {
+        return app.use(implied.middleware.cms);
+      }
     });
-    fs.exists(path.join(app.get('dir', 'views', 'pages')), function(exists) {
+    fs.exists(path.join(app.get('dir'), 'views', 'pages'), function(exists) {
       if (exists) {
         return app.use(implied.middleware.page);
       }
@@ -206,3 +207,5 @@
   implied.multi_views = require('./lib/multi_views');
 
 }).call(this);
+
+//# sourceMappingURL=index.map

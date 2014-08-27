@@ -1,101 +1,33 @@
-extends account-base
 
-block append head
-  
-  :stylus
-    exciting-blue=#49bbe8
-    super-blue = #4fc7d8
-    
-    .realtor, .spam
-      margin 0 0 0 20px
-    .realtor
-      margin 0 0 20px 7px
-      color #0e5873
-    .spam
-      margin 0 0 20px 7px
-      color #f47c4c
-      font-weight bold
-    .check-out
-      margin 0
-      a
-        color super-blue
-      a:hover
-        color #005f76
-    .benefits
-      margin 0 0 0 4px
-      width 531px
-      height 106px
-      background-image url("/images/benefits.png")
-      cursor hand
-      cursor pointer
+form.signup(method='POST', action='', autocomplete='off')
 
+  p.alert.alert-error(style='display:none')
 
-    .discover-benefits
-      position absolute
-      top 303px
-      left 470px
-      font-size 15px
-      a
-        font-size 18px
-        color #005f76
-      a:hover
-        color super-blue
+  label(for="email") Email
+  br
+  input.required(required=true, type='text', name='email', placeholder='test@example.com')
+  br
+  label(for="last_name") Password
+  br
+  input.required.password(required=true, type='password', name='password', placeholder='***')
+  br
+  input(type='hidden', name='then', value=req.query.then || '/dashboard')
+  br
 
-block content
-  
-  .pad-left(style='margin-top:20px;margin-bottom:4px;padding-left:35px')
-    if req.query.free=='true'
-      h1 Sign Up to Create Your Custom Property Listing for FREE!
-    else
-      h1 Sign up with Mr. B-Listed
+  p
+    | By signing up , you agree to these 
+    a(href="/terms", target="_blank") terms of use
+    | .
 
-    form.signup.form-horizontal(method='POST', action='', autocomplete='off')
-      //- unless req.query.free=='true'
-      //-   .alert.alert-info 
-      //-     | To list a property on the MLS&#174; System, you will need a Mr. B-Listed account. This will allow your listing information to be saved so you can return to it later.
-      - var today = new Date();
-      input(type='hidden', name='signup_date', value!=today)
-      .row
-        .span5
-          input.required.email(type='text', name='email', placeholder='e-Mail', value=(req.body && req.body.email) || '')
-          br
-          input.required.password(type='password', name='password', placeholder='Password', value=(req.body && req.body.password) || '')
-          br
-          input(type='hidden', name='then', value=req.query.then || '/listing/create?free=' + req.query.free)
-          input.signup(type='submit', value='')
-          p.check-out
-            a(href="/listings")
-              b CHECK OUT OUR LISTINGS PAGE
-              |  and see how great your listing could look!
-        .span6
-          p.realtor
-            | Please use the e-Mail address that you would like prospective buyers and their Realtors&#174; to use when inquiring about your listing.
-          
-          p.spam
-            | We will not sell or distribute your information to anyone.
-            br
-            | We will not e-Mail you any spam!
-          .benefits
-    .discover-benefits
-      a(href="/flat-fee-listings", target="_blank") 
-        b CLICK HERE
-      |  to discover the benefits of joining the B-List.
+  button(type='submit') I Agree. Sign up!
 
-block append footing
+  :coffeescript
 
-  if req.query.free
-    :coffeescript
-      mixpanel.track 'view-signup-free'
-      $('[type="submit"').click ->
-        mixpanel.track 'submit-signup-free'
-
-    | <!-- Google Code for SignupFree Conversion Page --> <script type="text/javascript">
-    | /* <![CDATA[ */
-    | var google_conversion_id = 1007597261;    var google_conversion_language = "en";    var google_conversion_format = "3";    var google_conversion_color = "ffffff";    var google_conversion_label = "7nK0CLO5pAQQze264AM";    var google_conversion_value = 10;
-    | /* ]]> */
-    | </script>
-    | <script type="text/javascript" src="//www.googleadservices.com/pagead/conversion.js">    </script>
-    | <noscript>    <div style="display:inline;">    <img height="1" width="1" style="border-style:none;" alt="" src="//www.googleadservices.com/pagead/conversion/1007597261/?value=50&amp;label=7nK0CLO5pAQQze264AM&amp;guid=ON&amp;script=0"/>    </div>    </noscript>
-
-    // Bing conversion "signup free"
-    | <script type="text/javascript"> if (!window.mstag) mstag = {loadTag : function(){},time : (new Date()).getTime()};</script> <script id="mstag_tops" type="text/javascript" src="//flex.atdmt.com/mstag/site/ba8dd4f3-5ddb-4e7a-8c32-12207a40eaba/mstag.js"></script> <script type="text/javascript"> mstag.loadTag("analytics", {dedup:"1",domainId:"2275329",type:"1",revenue:"10",actionid:"122509"})</script> <noscript> <iframe src="//flex.atdmt.com/mstag/tag/ba8dd4f3-5ddb-4e7a-8c32-12207a40eaba/analytics.html?dedup=1&domainId=2275329&type=1&revenue=10&actionid=122509" frameborder="0" scrolling="no" width="1" height="1" style="visibility:hidden;display:none"> </iframe> </noscript>
+    $('.signup').submit (e)->
+      e.preventDefault()
+      $.get '/signup.json?' + $('.signup').serialize(), (rsp)->
+        if rsp.success
+          window.location = '/dashboard'
+        else
+          $(".signup .alert-error").show().html rsp.message
+      false

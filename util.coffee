@@ -7,6 +7,7 @@ class Plugin
     @app = app
 
 module.exports = 
+
   extend: (obj) ->
     Array::slice.call(arguments, 1).forEach (source) ->
       if source
@@ -26,6 +27,10 @@ module.exports =
         throw "exec error: " + error
       callback?(stdout, error or stderr)
 
+
+  get_file_extension: (fname)->
+    fname.substr((Math.max(0, fname.lastIndexOf(".")) || Infinity) + 1)
+
   flash: (req, message_type, message)->
     if message_type and message
       m = req.session.messages ?= {}
@@ -37,4 +42,9 @@ module.exports =
   format: (str, dict)->
     str.replace /\{([^\}]+)\}/g, (match, $1)->
       dict[$1] or ''
-
+  
+  zpad: (num, zeros=0)->
+    num = ''+num
+    while num.length < zeros
+      num = '0' + num
+    num

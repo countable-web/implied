@@ -17,7 +17,7 @@ app.plugin('mongo', 'boilerplate', 'sendgrid', 'users'); // choose plugins you w
 
 ### Mongo
 
-The 'mongo' module wraps mongojs (a mongodb client), and sets an app variable with the database reference for use by other modules.
+The 'mongo' module wraps [mongojs](https://github.com/mafintosh/mongojs) (a mongodb client), and sets an app variable with the database reference for use by other modules.
 
 ```javascript
 

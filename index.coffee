@@ -54,6 +54,9 @@ implied = module.exports = (app)->
 
   app.plugin = (plugin, opts)->
     
+    if not this.get "app_name"
+      this.set "app_name", process.cwd().split("/").pop()
+
     opts ?= {}
 
     plugin_instance = undefined # The instance to register.
@@ -93,17 +96,13 @@ implied = module.exports = (app)->
 implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
-  #server = new mongolian()
-  #app.set 'db', server.db app.get 'db_name'
+  console.log app.get 'db_name'
   app.set 'db', mongojs app.get 'db_name'
 
 implied.boilerplate = (app)->
   
   if not app.get 'dir'
     app.set 'dir', process.cwd()
-
-  if not app.get "app_name"
-    app.set "app_name", "www"
 
   if not app.get "upload_dir"
     app.set "upload_dir", path.join "/var", app.get "app_name"
@@ -159,8 +158,14 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
-  app.use implied.middleware.cms
-  app.use implied.middleware.page
+  console.log 'what'
+  app.get('db').getCollectionNames (names)->
+    console.log names
+    app.use implied.middleware.cms
+  
+  fs.exists path.join(app.get 'dir', 'views', 'pages'), (exists)->
+    if exists
+      app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })

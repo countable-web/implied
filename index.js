@@ -66,6 +66,9 @@
     }
     return app.plugin = function(plugin, opts) {
       var child, plugin_instance, plugin_name, registered_plugins, _i, _len;
+      if (!this.get("app_name")) {
+        this.set("app_name", process.cwd().split("/").pop());
+      }
       if (opts == null) {
         opts = {};
       }
@@ -103,6 +106,7 @@
     if (!app.get('db_name')) {
       app.set('db_name', app.get('app_name'));
     }
+    console.log(app.get('db_name'));
     return app.set('db', mongojs(app.get('db_name')));
   };
 
@@ -110,9 +114,6 @@
     var helmet;
     if (!app.get('dir')) {
       app.set('dir', process.cwd());
-    }
-    if (!app.get("app_name")) {
-      app.set("app_name", "www");
     }
     if (!app.get("upload_dir")) {
       app.set("upload_dir", path.join("/var", app.get("app_name")));
@@ -163,8 +164,16 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
-    app.use(implied.middleware.cms);
-    app.use(implied.middleware.page);
+    console.log('what');
+    app.get('db').getCollectionNames(function(names) {
+      console.log(names);
+      return app.use(implied.middleware.cms);
+    });
+    fs.exists(path.join(app.get('dir', 'views', 'pages')), function(exists) {
+      if (exists) {
+        return app.use(implied.middleware.page);
+      }
+    });
     app.use(app.router);
     return app.set('view options', {
       layout: false

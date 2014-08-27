@@ -96,7 +96,9 @@ implied = module.exports = (app)->
 implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
-  console.log app.get 'db_name'
+  connect_string = app.get 'db_name'
+  if app.get 'db_password'
+    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   app.set 'db', mongojs app.get 'db_name'
 
 implied.boilerplate = (app)->
@@ -129,10 +131,15 @@ implied.boilerplate = (app)->
 
   if app.get 'db_name'
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
+    store_opts =
+      db: app.get 'db_name'
+    if app.get('db_password')
+      store_opts.username = app.get 'db_username'
+      store_opts.password = app.get 'db_password'
+
     app.use express.session
       secret: (app.get 'secret') or "UNSECURE-STRING",
-      store: new MongoStore
-        db: app.get('db_name')
+      store: new MongoStore store_opts
 
 
     if app.get('csrf') is true

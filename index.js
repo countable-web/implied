@@ -103,15 +103,19 @@
   };
 
   implied.mongo = function(app) {
+    var connect_string;
     if (!app.get('db_name')) {
       app.set('db_name', app.get('app_name'));
     }
-    console.log(app.get('db_name'));
+    connect_string = app.get('db_name');
+    if (app.get('db_password')) {
+      connect_string = (app.get('db_username')) + ':' + (app.get('db_password')) + '@localhost/' + connect_string;
+    }
     return app.set('db', mongojs(app.get('db_name')));
   };
 
   implied.boilerplate = function(app) {
-    var helmet;
+    var helmet, store_opts;
     if (!app.get('dir')) {
       app.set('dir', process.cwd());
     }
@@ -136,11 +140,16 @@
     }
     app.use(express.cookieParser());
     if (app.get('db_name')) {
+      store_opts = {
+        db: app.get('db_name')
+      };
+      if (app.get('db_password')) {
+        store_opts.username = app.get('db_username');
+        store_opts.password = app.get('db_password');
+      }
       app.use(express.session({
         secret: (app.get('secret')) || "UNSECURE-STRING",
-        store: new MongoStore({
-          db: app.get('db_name')
-        })
+        store: new MongoStore(store_opts)
       }));
       if (app.get('csrf') === true) {
         app.use(express.csrf());
@@ -197,5 +206,3 @@
   implied.multi_views = require('./lib/multi_views');
 
 }).call(this);
-
-//# sourceMappingURL=index.map

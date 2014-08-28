@@ -99,7 +99,8 @@ implied.mongo = (app)->
   connect_string = app.get 'db_name'
   if app.get 'db_password'
     connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
-  app.set 'db', mongojs app.get 'db_name'
+  
+  app.set 'db', connect_string
 
 implied.boilerplate = (app)->
   
@@ -167,9 +168,11 @@ implied.boilerplate = (app)->
     next()
   
   # if a cms table exists, use the cms middleware.
-  app.get('db').getCollectionNames (err, names)->
-    if names.indexOf('cms') > -1
-      app.use implied.middleware.cms
+  #app.get('db').getCollectionNames (err, names)->
+  #  if err
+  #    throw err
+  #  if names.indexOf('cms') > -1
+  app.use implied.middleware.cms
   
   # if a pages directory exists, use the pages middleware.
   fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->

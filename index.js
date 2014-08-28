@@ -174,11 +174,7 @@
       res.locals.req = res.locals.request = req;
       return next();
     });
-    app.get('db').getCollectionNames(function(err, names) {
-      if (names.indexOf('cms') > -1) {
-        return app.use(implied.middleware.cms);
-      }
-    });
+    app.use(implied.middleware.cms);
     fs.exists(path.join(app.get('dir'), 'views', 'pages'), function(exists) {
       if (exists) {
         return app.use(implied.middleware.page);
@@ -207,5 +203,3 @@
   implied.multi_views = require('./lib/multi_views');
 
 }).call(this);
-
-//# sourceMappingURL=index.map

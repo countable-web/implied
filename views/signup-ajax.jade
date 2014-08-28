@@ -1,0 +1,27 @@
+
+form.signup(method='POST', action='', autocomplete='off')
+
+  p.alert.alert-error(style='display:none')
+
+extends ../layout
+
+block content
+
+  h1 Log in
+  form(method='post')
+    input(type='text', name='email', placeholder='Email')
+    input.input-medium(type='password', name='password', placeholder='Password')
+    input(type='hidden', name='then', value=req.query.then || '/')
+    button(type='submit') Log in
+    a(href="/signup") New? sign up.
+
+  :coffeescript
+
+    $('.signup').submit (e)->
+      e.preventDefault()
+      $.get '/signup.json?' + $('.signup').serialize(), (rsp)->
+        if rsp.success
+          window.location = '/dashboard'
+        else
+          $(".signup .alert-error").show().html rsp.message
+      false

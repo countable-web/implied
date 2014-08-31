@@ -114,6 +114,31 @@
     return app.set('db', mongojs(app.get('db_name')));
   };
 
+  implied.mongo.oid_str = function(inp) {
+    return (me.oid(inp)).toString();
+  };
+
+  implied.mongo.oid = function(inp) {
+    var byte, result;
+    if (inp instanceof mongojs.ObjectId) {
+      return inp;
+    } else if (inp.bytes) {
+      result = ((function() {
+        var _i, _len, _ref, _results;
+        _ref = inp.bytes;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          byte = _ref[_i];
+          _results.push(implied.util.zpad(byte.toString(16), 2));
+        }
+        return _results;
+      })()).join('');
+      return mongojs.ObjectId(result);
+    } else {
+      return mongojs.ObjectId('' + inp);
+    }
+  };
+
   implied.boilerplate = function(app) {
     var helmet, store_opts;
     if (!app.get('dir')) {
@@ -207,5 +232,3 @@
   implied.multi_views = require('./lib/multi_views');
 
 }).call(this);
-
-//# sourceMappingURL=index.map

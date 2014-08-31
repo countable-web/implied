@@ -101,6 +101,18 @@ implied.mongo = (app)->
     connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   app.set 'db', mongojs app.get 'db_name'
 
+implied.mongo.oid_str = (inp)->
+  (me.oid inp).toString()
+
+implied.mongo.oid = (inp)->
+  if inp instanceof mongojs.ObjectId
+    return inp
+  else if inp.bytes
+    result = (implied.util.zpad(byte.toString(16),2) for byte in inp.bytes).join ''
+    return mongojs.ObjectId result
+  else
+    return mongojs.ObjectId ''+inp
+
 implied.boilerplate = (app)->
   
   if not app.get 'dir'

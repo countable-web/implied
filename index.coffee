@@ -4,16 +4,19 @@ uuid = require 'node-uuid'
 fs = require 'fs'
 path = require 'path'
 async = require 'async'
-
+http = require 'http'
 express = require 'express'
-#mongolian = require 'mongolian'
 mongojs = require 'mongojs'
-#MongoStore = require 'express-session-mongo'
 MongoStore = require('connect-mongo')(express)
 
 implied = module.exports = (app)->
   
+  app ?= express()
+
   app.set('implied', implied)
+
+  (require path.join process.cwd(), 'config') app
+
   implied.middleware =
 
     page: (req, res, next)->
@@ -49,8 +52,6 @@ implied = module.exports = (app)->
               res.render path.join('cms', 'cms.jade'), page
         else
           next()
-
-  app ?= express()
 
   app.plugin = (plugin, opts)->
     
@@ -92,6 +93,8 @@ implied = module.exports = (app)->
       registered_plugins = app.get('plugins') or {}
       registered_plugins[plugin_name] = plugin_instance
       app.set 'plugins', registered_plugins
+    
+  app
 
 implied.mongo = (app)->
   unless app.get 'db_name'
@@ -123,8 +126,7 @@ implied.boilerplate = (app)->
 
   app.set "views", path.join app.get('dir'), "views"
   app.set "view engine", "jade"
-  console.log 'view engine set'
-  app.configure 'development', ->
+  if app.get 'env' is 'development'
     app.locals.pretty = true
     app.locals.development = true
     #app.locals.compileDebug = true
@@ -191,6 +193,9 @@ implied.boilerplate = (app)->
   app.use app.router
   app.set('view options', { layout: false })
 
+  process.nextTick ->
+    http.createServer(app).listen app.get("port"), ->
+      console.log "Express server listening on port " + app.get("port")
 
 implied.util = require './util'
 implied.blog = require './lib/blog'

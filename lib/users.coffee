@@ -2,7 +2,6 @@ md5 = require 'MD5'
 uuid = require 'node-uuid'
 events = require 'events'
 util = require '../util'
-ObjectId = require('mongolian').ObjectId
 
 me = module.exports = (app, opts)->
 
@@ -304,7 +303,7 @@ me = module.exports = (app, opts)->
     # User imitation. Allows staff to simulate other users for debugging.
     # Hopefully not used for anything too devious.
     app.get "/become-user/:id", me.staff, (req,res)->
-      Users.findOne {_id: new ObjectId(req.params.id)}, (err, user)->
+      Users.findOne {_id: util.oid(req.params.id)}, (err, user)->
         login_success req, user
         goto_then req, res
 

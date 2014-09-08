@@ -8,10 +8,13 @@ http = require 'http'
 express = require 'express'
 mongojs = require 'mongojs'
 MongoStore = require('connect-mongo')(express)
+#multiViews = require('multi-views')
 
 implied = module.exports = (app)->
   
   app ?= express()
+  # Use this when we switch to express 4.
+  #multiViews.setupMultiViews(app)
 
   app.set('implied', implied)
 
@@ -42,7 +45,9 @@ implied = module.exports = (app)->
 
       pagename = req.path.substring(1).replace /\/$/, ''
 
+      console.log 'using cms middleware'
       db.collection('cms').findOne {page: pagename}, (err, page)->
+        console.log page
         if page
           # Override CMS.jade?
           fs.exists path.join(app.get('dir'), 'views', 'cms', pagename+'.jade'), (exists)->
@@ -125,8 +130,10 @@ implied.boilerplate = (app)->
     app.set "upload_dir", path.join "/var", app.get "app_name"
 
   app.set "views", path.join app.get('dir'), "views"
+
   app.set "view engine", "jade"
-  if app.get 'env' is 'development'
+  
+  if (app.get 'env') is 'development'
     app.locals.pretty = true
     app.locals.development = true
     #app.locals.compileDebug = true
@@ -156,7 +163,6 @@ implied.boilerplate = (app)->
       secret: (app.get 'secret') or "UNSECURE-STRING",
       store: new MongoStore store_opts
 
-
     if app.get('csrf') is true
       app.use(express.csrf())
       app.use (req, res, next) ->
@@ -180,15 +186,8 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
-  # if a cms table exists, use the cms middleware.
-  app.get('db').getCollectionNames (err, names)->
-    if names.indexOf('cms') > -1
-      app.use implied.middleware.cms
-  
-  # if a pages directory exists, use the pages middleware.
-  fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
-    if exists
-      app.use implied.middleware.page
+  app.use implied.middleware.cms
+  app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })

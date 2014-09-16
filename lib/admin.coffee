@@ -1,6 +1,5 @@
 
-mongolian = require 'mongolian'
-ObjectId = mongolian.ObjectId
+util = require '../util'
 path = require 'path'
 
 clear = (val)->
@@ -50,7 +49,7 @@ module.exports = (app, opts={})->
 
     # Show / Edit an object
     app.get "/mongo-admin/:collection/:id", staff, (req,res) ->
-      db.collection(req.params.collection).findOne {_id: new ObjectId(req.params.id)}, (err, rec)->
+      db.collection(req.params.collection).findOne {_id: util.oid(req.params.id)}, (err, rec)->
         res.render  path.join(template_base, "admin-object"),
           title: req.params.collection
           form: forms[req.params.collection]
@@ -58,7 +57,7 @@ module.exports = (app, opts={})->
 
     # Delete an object
     app.get "/mongo-admin/:collection/:id/del", staff, (req,res) ->
-      db.collection(req.params.collection).remove {_id: new ObjectId(req.params.id)}, (err, rec)->
+      db.collection(req.params.collection).remove {_id: util.oid(req.params.id)}, (err, rec)->
         res.redirect '/mongo-admin/'+req.params.collection
 
     # Save an object
@@ -67,7 +66,7 @@ module.exports = (app, opts={})->
         db.collection(req.params.collection).insert req.body, (err)->
           res.redirect '/mongo-admin/'+req.params.collection
       else
-        db.collection(req.params.collection).update {_id: new ObjectId(req.params.id)}, {$set: req.body}, (err)->
+        db.collection(req.params.collection).update {_id: util.oid(req.params.id)}, {$set: req.body}, (err)->
           res.redirect '/mongo-admin/'+req.params.collection
 
     app.post "/mongo-admin/api/:collection/:id", staff, (req,res) ->

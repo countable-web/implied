@@ -1,5 +1,4 @@
-implied
-=======
+# implied
 
 Ludicrously practical, reusable web app parts for Express with MongoDB. Acts as a convenience wrapper around express to reduce boilerplate cruft. Aims to provide an alternative to the MEAN stack without explicitly using angular, and certainly avoiding the use Mongoose, which forces a schema on a database (MongoDB) whose primary benefit is the lack of one. Implied is a work in progres but is used in several production websites.
 
@@ -8,7 +7,7 @@ Implied suggests you make modules callable, and take an express app as their fir
 config.js
 ````javascript
 module.exports = function(app){
-
+    app.set('port', 3000);
 }
 ````
 

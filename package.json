@@ -1,6 +1,6 @@
 {
   "name": "implied",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "desription": "Express convenience wrapper. Aims to provide an alternative to the MEAN stack without explicitly using angular, and certainly avoiding the use Mongoose.",
   "scripts": {
     "start": "node app"

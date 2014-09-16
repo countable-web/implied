@@ -20,12 +20,19 @@
 
   MongoStore = require('connect-mongo')(express);
 
-  implied = module.exports = function(app) {
+  implied = module.exports = function(app, options) {
+    this.options = options;
     if (app == null) {
       app = express();
     }
     app.set('implied', implied);
     (require(path.join(process.cwd(), 'config')))(app);
+    app.set('server', http.Server(app));
+    process.nextTick(function() {
+      return (app.get('server')).listen(app.get("port"), function() {
+        return console.log("Express server listening on port " + app.get("port"));
+      });
+    });
     implied.middleware = {
       page: function(req, res, next) {
         var pagename;
@@ -50,11 +57,9 @@
           return next();
         }
         pagename = req.path.substring(1).replace(/\/$/, '');
-        console.log('using cms middleware');
         return db.collection('cms').findOne({
           page: pagename
         }, function(err, page) {
-          console.log(page);
           if (page) {
             return fs.exists(path.join(app.get('dir'), 'views', 'cms', pagename + '.jade'), function(exists) {
               if (exists) {
@@ -207,13 +212,8 @@
     app.use(implied.middleware.cms);
     app.use(implied.middleware.page);
     app.use(app.router);
-    app.set('view options', {
+    return app.set('view options', {
       layout: false
-    });
-    return process.nextTick(function() {
-      return http.createServer(app).listen(app.get("port"), function() {
-        return console.log("Express server listening on port " + app.get("port"));
-      });
     });
   };
 
@@ -234,3 +234,5 @@
   implied.multi_views = require('./lib/multi_views');
 
 }).call(this);
+
+//# sourceMappingURL=index.map

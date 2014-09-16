@@ -10,8 +10,10 @@ mongojs = require 'mongojs'
 MongoStore = require('connect-mongo')(express)
 #multiViews = require('multi-views')
 
-implied = module.exports = (app)->
+implied = module.exports = (app, options)->
   
+  this.options = options
+
   app ?= express()
   # Use this when we switch to express 4.
   #multiViews.setupMultiViews(app)
@@ -19,6 +21,11 @@ implied = module.exports = (app)->
   app.set('implied', implied)
 
   (require path.join process.cwd(), 'config') app
+  
+  app.set('server', http.Server(app))
+  process.nextTick ->
+    (app.get 'server').listen app.get("port"), ->
+      console.log "Express server listening on port " + app.get("port")
 
   implied.middleware =
 
@@ -45,9 +52,7 @@ implied = module.exports = (app)->
 
       pagename = req.path.substring(1).replace /\/$/, ''
 
-      console.log 'using cms middleware'
       db.collection('cms').findOne {page: pagename}, (err, page)->
-        console.log page
         if page
           # Override CMS.jade?
           fs.exists path.join(app.get('dir'), 'views', 'cms', pagename+'.jade'), (exists)->
@@ -192,9 +197,6 @@ implied.boilerplate = (app)->
   app.use app.router
   app.set('view options', { layout: false })
 
-  process.nextTick ->
-    http.createServer(app).listen app.get("port"), ->
-      console.log "Express server listening on port " + app.get("port")
 
 implied.util = require './util'
 implied.blog = require './lib/blog'

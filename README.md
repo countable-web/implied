@@ -19,7 +19,7 @@ Usage:
 
 var implied = require('implied');
 
-implied(app); // initialize the library.
+app = implied(); // initialize the library.
 
 app.plugin('mongo', 'boilerplate', 'sendgrid', 'users'); // choose plugins you want in dependency order. Currently many things depend on 'mongo'.
 

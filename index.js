@@ -21,6 +21,9 @@
   MongoStore = require('connect-mongo')(express);
 
   implied = module.exports = function(app, options) {
+    options = implied.util.extend({
+      serve: true
+    }, options);
     this.options = options;
     if (app == null) {
       app = express();
@@ -28,11 +31,13 @@
     app.set('implied', implied);
     (require(path.join(process.cwd(), 'config')))(app);
     app.set('server', http.Server(app));
-    process.nextTick(function() {
-      return (app.get('server')).listen(app.get("port"), function() {
-        return console.log("Express server listening on port " + app.get("port"));
+    if (options.serve) {
+      process.nextTick(function() {
+        return (app.get('server')).listen(app.get("port"), function() {
+          return console.log("Express server listening on port " + app.get("port"));
+        });
       });
-    });
+    }
     implied.middleware = {
       page: function(req, res, next) {
         var pagename;

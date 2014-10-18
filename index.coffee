@@ -12,6 +12,9 @@ MongoStore = require('connect-mongo')(express)
 
 implied = module.exports = (app, options)->
   
+  options = implied.util.extend {
+    serve: true # by default, serve the web app.
+  }, options
   this.options = options
 
   app ?= express()
@@ -23,9 +26,11 @@ implied = module.exports = (app, options)->
   (require path.join process.cwd(), 'config') app
   
   app.set('server', http.Server(app))
-  process.nextTick ->
-    (app.get 'server').listen app.get("port"), ->
-      console.log "Express server listening on port " + app.get("port")
+  
+  if options.serve
+    process.nextTick ->
+      (app.get 'server').listen app.get("port"), ->
+        console.log "Express server listening on port " + app.get("port")
 
   implied.middleware =
 

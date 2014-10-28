@@ -7,7 +7,7 @@ module.exports = (app)->
 
   mailer = (app.get 'mailer')
 
-  app.configure "development", ->
+  if app.get 'env' is "development"
 
     app.use express.errorHandler
       dumpExceptions: true
@@ -33,7 +33,7 @@ module.exports = (app)->
         console.error "ERROR EMAIL FAILED: ",message
         callback? "ERROR EMAIL FAILED: ",message
 
-  app.configure "production", ->
+  if app.get 'env' is "production"
 
     #app.use express.errorHandler()
     app.use (err, req, res, next)->

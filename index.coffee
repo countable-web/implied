@@ -4,16 +4,34 @@ uuid = require 'node-uuid'
 fs = require 'fs'
 path = require 'path'
 async = require 'async'
-
+http = require 'http'
 express = require 'express'
-#mongolian = require 'mongolian'
 mongojs = require 'mongojs'
-#MongoStore = require 'express-session-mongo'
 MongoStore = require('connect-mongo')(express)
+#multiViews = require('multi-views')
 
-implied = module.exports = (app)->
+implied = module.exports = (app, options)->
   
+  options = implied.util.extend {
+    serve: true # by default, serve the web app.
+  }, options
+  this.options = options
+
+  app ?= express()
+  # Use this when we switch to express 4.
+  #multiViews.setupMultiViews(app)
+
   app.set('implied', implied)
+
+  (require path.join process.cwd(), 'config') app
+  
+  app.set('server', http.Server(app))
+  
+  if options.serve
+    process.nextTick ->
+      (app.get 'server').listen app.get("port"), ->
+        console.log "Express server listening on port " + app.get("port")
+
   implied.middleware =
 
     page: (req, res, next)->
@@ -49,8 +67,6 @@ implied = module.exports = (app)->
               res.render path.join('cms', 'cms.jade'), page
         else
           next()
-
-  app ?= express()
 
   app.plugin = (plugin, opts)->
     
@@ -92,6 +108,8 @@ implied = module.exports = (app)->
       registered_plugins = app.get('plugins') or {}
       registered_plugins[plugin_name] = plugin_instance
       app.set 'plugins', registered_plugins
+    
+  app
 
 implied.mongo = (app)->
   unless app.get 'db_name'
@@ -100,7 +118,19 @@ implied.mongo = (app)->
   if app.get 'db_password'
     connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   
-  app.set 'db', connect_string
+  app.set 'db', mongojs connect_string
+
+implied.mongo.oid_str = (inp)->
+  (me.oid inp).toString()
+
+implied.mongo.oid = (inp)->
+  if inp instanceof mongojs.ObjectId
+    return inp
+  else if inp.bytes
+    result = (implied.util.zpad(byte.toString(16),2) for byte in inp.bytes).join ''
+    return mongojs.ObjectId result
+  else
+    return mongojs.ObjectId ''+inp
 
 implied.boilerplate = (app)->
   
@@ -111,9 +141,10 @@ implied.boilerplate = (app)->
     app.set "upload_dir", path.join "/var", app.get "app_name"
 
   app.set "views", path.join app.get('dir'), "views"
+
   app.set "view engine", "jade"
-  console.log 'view engine set'
-  app.configure 'development', ->
+  
+  if (app.get 'env') is 'development'
     app.locals.pretty = true
     app.locals.development = true
     #app.locals.compileDebug = true
@@ -142,7 +173,6 @@ implied.boilerplate = (app)->
     app.use express.session
       secret: (app.get 'secret') or "UNSECURE-STRING",
       store: new MongoStore store_opts
-
 
     if app.get('csrf') is true
       app.use(express.csrf())
@@ -178,6 +208,8 @@ implied.boilerplate = (app)->
   fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
     if exists
       app.use implied.middleware.page
+  app.use implied.middleware.cms
+  app.use implied.middleware.page
 
   app.use app.router
   app.set('view options', { layout: false })

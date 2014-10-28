@@ -1,6 +1,10 @@
 
 # Some utilities
 exec = require('child_process').exec
+mongojs = require 'mongojs'
+
+
+
 
 class Plugin
   constructor: ->
@@ -48,3 +52,15 @@ module.exports =
     while num.length < zeros
       num = '0' + num
     num
+
+  oid_str: (inp)->
+    (me.oid inp).toString()
+
+  oid: (inp)->
+    if inp instanceof mongojs.ObjectId
+      return inp
+    else if inp.bytes
+      result = (implied.util.zpad(byte.toString(16),2) for byte in inp.bytes).join ''
+      return mongojs.ObjectId result
+    else
+      return mongojs.ObjectId ''+inp

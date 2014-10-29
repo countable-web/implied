@@ -79,6 +79,11 @@
     },
     oid: function(inp) {
       var byte, result;
+      if (inp === void 0) {
+        console.error('implied.util.oid: undefined objectid');
+        console.trace();
+        return inp;
+      }
       if (inp instanceof mongojs.ObjectId) {
         return inp;
       } else if (inp.bytes) {

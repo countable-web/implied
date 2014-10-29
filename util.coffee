@@ -57,6 +57,10 @@ me = module.exports =
     (me.oid inp).toString()
 
   oid: (inp)->
+    if inp is undefined
+      console.error 'implied.util.oid: undefined objectid'
+      console.trace()
+      return inp
     if inp instanceof mongojs.ObjectId
       return inp
     else if inp.bytes

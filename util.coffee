@@ -10,7 +10,7 @@ class Plugin
   constructor: ->
     @app = app
 
-module.exports = 
+me = module.exports = 
 
   extend: (obj) ->
     Array::slice.call(arguments, 1).forEach (source) ->

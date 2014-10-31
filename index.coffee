@@ -161,11 +161,13 @@ implied.boilerplate = (app)->
     app.use(helmet.cacheControl())
   
   app.use express.cookieParser()
+  
+  app.set 'session_db_name', 'session'
 
-  if app.get 'db_name'
+  if (app.get 'session_db_name')
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
     store_opts =
-      db: app.get 'db_name'
+      db: app.get 'session_db_name'
     if app.get('db_password')
       store_opts.username = app.get 'db_username'
       store_opts.password = app.get 'db_password'
@@ -174,11 +176,11 @@ implied.boilerplate = (app)->
       secret: (app.get 'secret') or "UNSECURE-STRING",
       store: new MongoStore store_opts
 
-    if app.get('csrf') is true
-      app.use(express.csrf())
-      app.use (req, res, next) ->
-        res.locals.csrf = req.session._csrf
-        next()
+  if app.get('csrf') is true
+    app.use(express.csrf())
+    app.use (req, res, next) ->
+      res.locals.csrf = req.session._csrf
+      next()
     
   app.use express.methodOverride()
 

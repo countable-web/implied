@@ -36,7 +36,7 @@ me = module.exports = (app, opts)->
 
     
     goto_error = (req, res)->
-      res.redirect req.query.onerror or req.body.onerror or req.path
+      res.redirect req.query.onerror or req.body.onerror or req.originalUrl
 
 
     # User succeeded in authenticating.

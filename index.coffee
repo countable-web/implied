@@ -115,8 +115,8 @@ implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
   connect_string = app.get 'db_name'
-  if app.get 'db_password'
-    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
+  #if app.get 'db_password'
+  #    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   
   app.set 'db', mongojs connect_string
 
@@ -162,7 +162,9 @@ implied.boilerplate = (app)->
   
   app.use express.cookieParser()
   
-  app.set 'session_db_name', 'session'
+  app.set 'session_db_name', (app.get 'session_db_name') or 'session'
+  
+  console.log 'session db',  (app.get 'session_db_name')
 
   if (app.get 'session_db_name')
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})

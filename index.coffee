@@ -11,6 +11,7 @@ MongoStore = require('connect-mongo')(express)
 #multiViews = require('multi-views')
 
 implied = module.exports = (app, options)->
+
   
   options = implied.util.extend {
     serve: true # by default, serve the web app.
@@ -22,6 +23,9 @@ implied = module.exports = (app, options)->
   #multiViews.setupMultiViews(app)
 
   app.set('implied', implied)
+  
+  if not app.get "app_name"
+    app.set "app_name", process.cwd().split("/").pop()
 
   (require path.join process.cwd(), 'config') app
   
@@ -69,9 +73,6 @@ implied = module.exports = (app, options)->
           next()
 
   app.plugin = (plugin, opts)->
-    
-    if not this.get "app_name"
-      this.set "app_name", process.cwd().split("/").pop()
 
     opts ?= {}
 
@@ -201,20 +202,20 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
-  # if a cms table exists, use the cms middleware.
+implied.routing = (app)->
+  # if a cms table exists, use the cms middleware. FAILS, due to middleware order
   #app.get('db').getCollectionNames (err, names)->
   #  if err
   #    throw err
   #  if names.indexOf('cms') > -1
   app.use implied.middleware.cms
   
-  # if a pages directory exists, use the pages middleware.
-  fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
-    if exists
-      app.use implied.middleware.page
-  app.use implied.middleware.cms
+  # if a pages directory exists, use the pages middleware. FAILS, due to middleware order
+  #fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
+  #  if exists
+  #    app.use implied.middleware.page
   app.use implied.middleware.page
-
+  
   app.use app.router
   app.set('view options', { layout: false })
 

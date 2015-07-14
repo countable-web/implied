@@ -144,9 +144,11 @@ me = module.exports = (app, opts)->
           lookup
         ).toArray (err, users)->
 
-          if users.length is 0
-
-            Users.insert user, (err, user)->
+          if users.length is 0 or users[0].pending
+            
+            
+            
+            Users.update lookup, user, {upsert: true}, (err, user)->
 
               if err
                 return callback

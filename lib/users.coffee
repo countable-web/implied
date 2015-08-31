@@ -71,7 +71,6 @@ me = module.exports = (app, opts)->
       lookup = build_lookup_query
         username: req.param 'username'
         email: req.param 'email'
-      console.log lookup
       password = req.param 'password'
       query = 
         $and: [
@@ -82,8 +81,8 @@ me = module.exports = (app, opts)->
               {password: md5(password + salt)}
             ]
         ]
-      console.dir JSON.stringify query
-      Users.findOne query, (err, user)->
+      
+      db.collection('users').findOne query, (err, user)->
         if user
           # If this app requires email confirmation, enforce it.
           if not user.confirmed and app.get 'email_confirm'

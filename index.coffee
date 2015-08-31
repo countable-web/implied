@@ -8,6 +8,7 @@ http = require 'http'
 express = require 'express'
 mongojs = require 'mongojs'
 MongoStore = require('connect-mongo')(express)
+session = require('express-session')
 #multiViews = require('multi-views')
 
 implied = module.exports = (app, options)->
@@ -119,7 +120,7 @@ implied.mongo = (app)->
   #if app.get 'db_password'
   #    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   
-  app.set 'db', mongojs connect_string
+  app.set('db', mongojs(connect_string, [], {authMechanism: 'ScramSHA1'}))
 
 implied.mongo.oid_str = (inp)->
   (me.oid inp).toString()
@@ -170,14 +171,15 @@ implied.boilerplate = (app)->
   if (app.get 'session_db_name')
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
     store_opts =
-      db: app.get 'session_db_name'
-    if app.get('db_password')
-      store_opts.username = app.get 'db_username'
-      store_opts.password = app.get 'db_password'
-
-    app.use express.session
+      url: app.get 'session_db_name'
+#if app.get('db_password')
+#      store_opts.username = app.get 'db_username'
+#      store_opts.password = app.get 'db_password'
+    
+    FileStore = require('session-file-store')(session)
+    app.use session
       secret: (app.get 'secret') or "UNSECURE-STRING",
-      store: new MongoStore store_opts
+      store: new FileStore(session)
 
   if app.get('csrf') is true
     app.use(express.csrf())

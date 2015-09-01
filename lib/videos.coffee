@@ -1,4 +1,3 @@
-$ = require 'jquery'
 fs = require 'fs'
 async = require 'async'
 util = require '../util'

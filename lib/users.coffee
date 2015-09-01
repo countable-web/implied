@@ -142,6 +142,8 @@ me = module.exports = (app, opts)->
         Users.find(
           lookup
         ).toArray (err, users)->
+          if err
+            throw err
 
           if users.length is 0 or users[0].pending
             

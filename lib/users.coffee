@@ -325,7 +325,7 @@ me.restrict = (req, res, next) ->
 
 me.sanitize = (s, field_name)->
     # if it's an object, use an OID
-    if field_name.substr(field_name.length-3) is "_id"
+    if field_name and field_name.substr(field_name.length-3) is "_id"
       try
         return util.oid(s)
       catch error

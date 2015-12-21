@@ -18,6 +18,8 @@
     "mongojs": "latest",
     "stylus": "latest",
     "coffee-script": "1.8",
-    "multi-views" : "*"
+    "multi-views": "*",
+    "express-session": "~1.11.3",
+    "session-file-store": "0.0.18"
   }
 }

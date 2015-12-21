@@ -36,7 +36,7 @@ me = module.exports = (app, opts)->
 
     
     goto_error = (req, res)->
-      res.redirect req.query.onerror or req.body.onerror or req.path
+      res.redirect req.query.onerror or req.body.onerror or req.originalUrl
 
 
     # User succeeded in authenticating.
@@ -71,7 +71,6 @@ me = module.exports = (app, opts)->
       lookup = build_lookup_query
         username: req.param 'username'
         email: req.param 'email'
-      console.log lookup
       password = req.param 'password'
       query = 
         $and: [
@@ -82,8 +81,8 @@ me = module.exports = (app, opts)->
               {password: md5(password + salt)}
             ]
         ]
-      console.dir JSON.stringify query
-      Users.findOne query, (err, user)->
+      
+      db.collection('users').findOne query, (err, user)->
         if user
           # If this app requires email confirmation, enforce it.
           if not user.confirmed and app.get 'email_confirm'
@@ -107,11 +106,11 @@ me = module.exports = (app, opts)->
 
       for own k,v of req.query
         if k.substr(0,1) isnt '_'
-          user[k] = me.sanitize v
+          user[k] = me.sanitize v, k
 
       for own k,v of req.body
         if k.substr(0,1) isnt '_'
-          user[k] = me.sanitize v
+          user[k] = me.sanitize v, k
 
       user.email = user.email.replace(" ", "").toLowerCase()
       user.confirmed = false
@@ -143,36 +142,42 @@ me = module.exports = (app, opts)->
         Users.find(
           lookup
         ).toArray (err, users)->
+          if err
+            throw err
 
-          if users.length is 0
-
-            Users.insert user, (err, user)->
-
-              if err
-                return callback
-                  success: false
-                  message: err
-
-              mailer?.send_mail
-                to: user.email
-                subject: app.get("welcome_email_subject") or "Welcome!"
-                body: util.format app.get("welcome_email"),
-                  first_name: user.first_name or user.email
-                  confirm_link: "http://" + (app.get 'host') + "/confirm_email?token=" + user.email_confirmation_token
+          if users.length is 0 or users[0].pending
+            
+            
+            
+            Users.update lookup, user, {upsert: true}, (err, result)->
               
-              # User creation event.
-              me.emitter.emit 'signup', user
+              Users.findOne {email:user.email}, (err, user)->
 
-              # If no confirmation is required, sign the person in.
-              if app.get 'email_confirm'
-                callback
-                  success: true
-                  message: 'Thanks for signing up! Please follow the instructions in your welcome email.'
-              else
-                login_success req, user
-                callback
-                  success: true
-                  message: 'Thanks for signing up!'
+                if err
+                  return callback
+                    success: false
+                    message: err
+
+                mailer?.send_mail
+                  to: user.email
+                  subject: app.get("welcome_email_subject") or "Welcome!"
+                  body: util.format app.get("welcome_email"),
+                    first_name: user.first_name or user.email
+                    confirm_link: "http://" + (app.get 'host') + "/confirm-email?token=" + user.email_confirmation_token
+                
+                # User creation event.
+                me.emitter.emit 'signup', user
+
+                # If no confirmation is required, sign the person in.
+                if app.get 'email_confirm'
+                  callback
+                    success: true
+                    message: 'Thanks for signing up! Please follow the instructions in your welcome email.'
+                else
+                  login_success req, user
+                  callback
+                    success: true
+                    message: 'Thanks for signing up!'
               
           else
             callback
@@ -248,17 +253,17 @@ me = module.exports = (app, opts)->
 
 
     # Email Confirmation
-    app.get "/confirm_email", (req, res)->
-      if req.session.email
-        query = {email: req.session.email}
-      else
-        query = {email_confirmation_token: req.query.token}
+    app.get "/confirm-email", (req, res)->
+
+      query = {email_confirmation_token: req.query.token}
       Users.update query, {$set:{confirmed:true}}, (err) ->
         if err
           flash req, 'error', 'Email confirmation failed'
           goto_then req, res
         else
           Users.findOne query, (err, user)->
+            if err then throw err
+            if not user then throw 'User does not exist'
             login_success req, user
             if user
               flash req, 'success', 'Email confirmed'
@@ -318,6 +323,12 @@ me.restrict = (req, res, next) ->
     res.redirect "/login" + "?then=" + req.path
 
 
-
-me.sanitize = (s)->
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
+me.sanitize = (s, field_name)->
+    # if it's an object, use an OID
+    if field_name.substr(field_name.length-3) is "_id"
+      try
+        return util.oid(s)
+      catch error
+        console.error 'bad id string:', s, error
+    else
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')

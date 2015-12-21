@@ -8,9 +8,11 @@ http = require 'http'
 express = require 'express'
 mongojs = require 'mongojs'
 MongoStore = require('connect-mongo')(express)
+session = require('express-session')
 #multiViews = require('multi-views')
 
 implied = module.exports = (app, options)->
+
   
   options = implied.util.extend {
     serve: true # by default, serve the web app.
@@ -22,6 +24,9 @@ implied = module.exports = (app, options)->
   #multiViews.setupMultiViews(app)
 
   app.set('implied', implied)
+  
+  if not app.get "app_name"
+    app.set "app_name", process.cwd().split("/").pop()
 
   (require path.join process.cwd(), 'config') app
   
@@ -69,9 +74,6 @@ implied = module.exports = (app, options)->
           next()
 
   app.plugin = (plugin, opts)->
-    
-    if not this.get "app_name"
-      this.set "app_name", process.cwd().split("/").pop()
 
     opts ?= {}
 
@@ -115,10 +117,10 @@ implied.mongo = (app)->
   unless app.get 'db_name'
     app.set 'db_name', app.get 'app_name'
   connect_string = app.get 'db_name'
-  if app.get 'db_password'
-    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
+  #if app.get 'db_password'
+  #    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   
-  app.set 'db', mongojs connect_string
+  app.set('db', mongojs(connect_string, [], {authMechanism: 'ScramSHA1'}))
 
 implied.mongo.oid_str = (inp)->
   (me.oid inp).toString()
@@ -161,24 +163,29 @@ implied.boilerplate = (app)->
     app.use(helmet.cacheControl())
   
   app.use express.cookieParser()
+  
+  app.set 'session_db_name', (app.get 'session_db_name') or 'session'
+  
+  console.log 'session db',  (app.get 'session_db_name')
 
-  if app.get 'db_name'
+  if (app.get 'session_db_name')
     #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
     store_opts =
-      db: app.get 'db_name'
-    if app.get('db_password')
-      store_opts.username = app.get 'db_username'
-      store_opts.password = app.get 'db_password'
-
-    app.use express.session
+      url: app.get 'session_db_name'
+#if app.get('db_password')
+#      store_opts.username = app.get 'db_username'
+#      store_opts.password = app.get 'db_password'
+    
+    FileStore = require('session-file-store')(session)
+    app.use session
       secret: (app.get 'secret') or "UNSECURE-STRING",
-      store: new MongoStore store_opts
+      store: new FileStore(session)
 
-    if app.get('csrf') is true
-      app.use(express.csrf())
-      app.use (req, res, next) ->
-        res.locals.csrf = req.session._csrf
-        next()
+  if app.get('csrf') is true
+    app.use(express.csrf())
+    app.use (req, res, next) ->
+      res.locals.csrf = req.session._csrf
+      next()
     
   app.use express.methodOverride()
 
@@ -197,20 +204,20 @@ implied.boilerplate = (app)->
     res.locals.req = res.locals.request = req
     next()
   
-  # if a cms table exists, use the cms middleware.
+implied.routing = (app)->
+  # if a cms table exists, use the cms middleware. FAILS, due to middleware order
   #app.get('db').getCollectionNames (err, names)->
   #  if err
   #    throw err
   #  if names.indexOf('cms') > -1
   app.use implied.middleware.cms
   
-  # if a pages directory exists, use the pages middleware.
-  fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
-    if exists
-      app.use implied.middleware.page
-  app.use implied.middleware.cms
+  # if a pages directory exists, use the pages middleware. FAILS, due to middleware order
+  #fs.exists path.join((app.get 'dir'), 'views', 'pages'), (exists)->
+  #  if exists
+  #    app.use implied.middleware.page
   app.use implied.middleware.page
-
+  
   app.use app.router
   app.set('view options', { layout: false })
 

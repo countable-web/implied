@@ -217,7 +217,6 @@ implied.boilerplate = (app)->
 
 implied.util = require './util'
 implied.blog = require './lib/blog'
-implied.videos = require './lib/videos'
 implied.users = require './lib/users'
 implied.logging = require './lib/logging'
 implied.admin = require './lib/admin'

@@ -1,6 +1,6 @@
 {
   "name": "implied",
-  "version": "0.1",
+  "version": "0.1.0",
   "desription": "Express convenience wrapper.",
   "scripts": {
     "start": "node app",
@@ -24,6 +24,6 @@
     "session-file-store": "0.0.18"
   },
   "devDependencies": {
-    "jasmine-node": "*"
+    "vows": "^0.8.1"
   }
 }

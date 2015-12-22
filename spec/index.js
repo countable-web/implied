@@ -5,7 +5,7 @@ describe("Sanity tests", function(){
 
   var a;
 
-  it("and so is a spec", function() {
+  it("such spec, very bdd, wow", function() {
     a = true;
 
     expect(a).toBe(true);

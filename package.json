@@ -1,9 +1,10 @@
 {
   "name": "implied",
-  "version": "0.0.5",
-  "desription": "Express convenience wrapper. Aims to provide an alternative to the MEAN stack without explicitly using angular, and certainly avoiding the use Mongoose.",
+  "version": "0.1",
+  "desription": "Express convenience wrapper.",
   "scripts": {
-    "start": "node app"
+    "start": "node app",
+    "test": "jasmine-node spec/"
   },
   "repository": "https://github.com/countable/implied.git",
   "dependencies": {
@@ -21,5 +22,8 @@
     "multi-views": "*",
     "express-session": "~1.11.3",
     "session-file-store": "0.0.18"
+  },
+  "devDependencies": {
+    "jasmine-node": "*"
   }
 }

@@ -93,6 +93,7 @@ me = module.exports = (app, opts)->
             login_success req, user
             callback
               success: true
+              user: user
               message: 'You have been logged in.'
         else
           callback
@@ -147,8 +148,6 @@ me = module.exports = (app, opts)->
 
           if users.length is 0 or users[0].pending
             
-            
-            
             Users.update lookup, user, {upsert: true}, (err, result)->
               
               Users.findOne {email:user.email}, (err, user)->
@@ -177,6 +176,7 @@ me = module.exports = (app, opts)->
                   login_success req, user
                   callback
                     success: true
+                    user: user
                     message: 'Thanks for signing up!'
               
           else
@@ -221,6 +221,12 @@ me = module.exports = (app, opts)->
       goto_then req, res
 
 
+    app.get "/logout.json", (req, res) ->
+      logout req
+      res.send
+        success: true
+
+
     app.post "/signup", (req, res) ->
 
       signup req, (result)->
@@ -239,6 +245,8 @@ me = module.exports = (app, opts)->
       login req, (result)->
         res.send result
 
+    
+    console.log ('binding, signup.json')
 
     app.get "/signup.json", (req, res) ->
 
@@ -315,6 +323,7 @@ me = module.exports = (app, opts)->
 
 me.emitter = new events.EventEmitter()
 
+
 # Ensure a user is a member
 me.restrict = (req, res, next) ->
   if req.session.email
@@ -322,6 +331,15 @@ me.restrict = (req, res, next) ->
   else
     res.redirect "/login" + "?then=" + req.path
 
+
+# Ensure a user is a member, for rest API
+me.restrict_rest = (req, res, next) ->
+  if req.session.email
+    next()
+  else
+    res.send
+      success: false
+      message: 'Not authenticated.'
 
 me.sanitize = (s, field_name)->
     # if it's an object, use an OID

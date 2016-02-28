@@ -1,27 +1,35 @@
 {
   "name": "implied",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "desription": "Express convenience wrapper.",
   "scripts": {
     "start": "node app",
-    "test": "jasmine-node spec/"
+    "test": "./node_modules/.bin/jasmine-node --coffee --matchall spec/"
   },
   "repository": "https://github.com/countable/implied.git",
   "dependencies": {
-    "express": "3.*",
-    "jade": "1.6.*",
     "MD5": "latest",
-    "connect-mongo": "*",
-    "async": "latest",
+    "async": "*",
+    "body-parser": "^1.14.2",
+    "coffee-script": "^1.10.0",
+    "connect-mongo": "^1.1.0",
+    "cookie-parser": "^1.4.1",
+    "express": "^4.13.4",
+    "express-session": "^1.13.0",
+    "jade": "^1.11.0",
+    "method-override": "^2.3.5",
+    "mongojs": "^2.3.0",
+    "request": "^2.69.0",
+    "requests": "^0.1.7",
     "sendgrid": "~0.3.0-rc.1.8",
-    "underscore": "latest",
-    "mongojs": "latest",
+    "serve-favicon": "^2.3.0",
+    "serve-static": "^1.10.2",
+    "session-file-store": "0.0.24",
     "stylus": "latest",
-    "coffee-script": "1.8",
-    "express-session": "~1.11.3",
-    "session-file-store": "0.0.18"
+    "underscore": "latest"
   },
   "devDependencies": {
+    "jasmine-node": "^1.14.5",
     "vows": "^0.8.1"
   }
 }

@@ -4,6 +4,7 @@ path = require 'path'
 middleware =
 
   page: (req, res, next)->
+
     unless (req.method or req.originalMethod) is 'GET'
       return next()
 
@@ -18,7 +19,6 @@ middleware =
 
   # CMS
   cms: (req, res, next)->
-
     db = req.app.get 'db'
 
     unless (req.method or req.originalMethod) is 'GET'
@@ -44,6 +44,7 @@ module.exports = (app)->
   #  if err
   #    throw err
   #  if names.indexOf('cms') > -1
+
   app.use middleware.cms
   
   # if a pages directory exists, use the pages middleware. FAILS, due to middleware order
@@ -52,6 +53,4 @@ module.exports = (app)->
   #    app.use implied.middleware.page
   app.use middleware.page
   
-  app.use app.router
-
   app.set('view options', { layout: false })

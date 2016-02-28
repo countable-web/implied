@@ -1,5 +1,7 @@
 
 mongojs = require 'mongojs'
+session = require 'express-session'
+MongoStore = require('connect-mongo')(session)
 
 me = module.exports = (app)->
   unless app.get 'db_name'
@@ -9,10 +11,17 @@ me = module.exports = (app)->
   #    connect_string = (app.get 'db_username') + ':' + (app.get 'db_password') + '@localhost/' + connect_string
   
   app.set('db', mongojs(connect_string, [], {authMechanism: 'ScramSHA1'}))
+  
+  #options =
+  #  db: app.get 'db'
+
+  app.use session
+    secret: 'fkdowanvnsaijfij',
+  #  store: new MongoStore(options)
+  
 
 me.oid_str = (inp)->
   (me.oid inp).toString()
-
 
 me.oid = (inp)->
   if inp instanceof mongojs.ObjectId
@@ -22,3 +31,5 @@ me.oid = (inp)->
     return mongojs.ObjectId result
   else
     return mongojs.ObjectId ''+inp
+
+

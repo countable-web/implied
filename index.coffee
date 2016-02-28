@@ -1,4 +1,5 @@
 
+session = require 'express-session'
 fs = require 'fs'
 path = require 'path'
 async = require 'async'
@@ -6,10 +7,6 @@ http = require 'http'
 
 md5 = require 'MD5'
 express = require 'express'
-
-MongoStore = require('connect-mongo')(express)
-
-session = require('express-session')
 
 # Sane defaults for as many initial settings as possible.
 defaults =
@@ -43,7 +40,10 @@ implied = module.exports = (app, options)->
   app.set('implied', implied)
   
   # apply the config.
-  (require path.join app.get('dir'), 'config') app
+  try
+    (require path.join app.get('dir'), 'config') app
+  catch e
+    console.log 'no config file'
   
   app.set('server', http.Server(app))
   

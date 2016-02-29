@@ -1,5 +1,5 @@
 md5 = require 'MD5'
-uuid = require 'node-uuid'
+#uuid = require 'node-uuid'
 events = require 'events'
 util = require '../util'
 
@@ -115,7 +115,7 @@ me = module.exports = (app, opts)->
 
       user.email = user.email.replace(" ", "").toLowerCase()
       user.confirmed = false
-      user.email_confirmation_token = uuid.v4()
+      user.email_confirmation_token = Math.random() #uuid.v4()
       
       unless user.email and user.password
         callback
@@ -282,7 +282,7 @@ me = module.exports = (app, opts)->
     app.post "/reset-password-submit", (req,res)->
       Users.findOne {email: req.body.email}, (err, user) ->
         if user
-          token = uuid.v4()
+          token = Math.random() #uuid.v4()
           Users.update({_id:user._id}, {$set:{password_reset_token:token}})
           mailer?.send_mail(
               to: user.email

@@ -48,8 +48,9 @@ implied = module.exports = (app, options)->
   app.set('server', http.Server(app))
   
   process.nextTick ->
-    (app.get 'server').listen app.get("port"), ->
-      console.log "Express server listening on port " + app.get("port")
+    if app.get('port')
+      (app.get 'server').listen app.get("port"), ->
+        console.log "Express server listening on port " + app.get("port")
 
   app.plugin = (plugin, opts)->
 

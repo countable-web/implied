@@ -53,9 +53,11 @@
     (require(path.join(app.get('dir'), 'config')))(app);
     app.set('server', http.Server(app));
     process.nextTick(function() {
-      return (app.get('server')).listen(app.get("port"), function() {
-        return console.log("Express server listening on port " + app.get("port"));
-      });
+      if (app.get('port')) {
+        return (app.get('server')).listen(app.get("port"), function() {
+          return console.log("Express server listening on port " + app.get("port"));
+        });
+      }
     });
     app.plugin = function(plugin, opts) {
       var child, i, len, plugin_instance, plugin_name, registered_plugins;

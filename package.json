@@ -19,6 +19,7 @@
     "node-uuid": "^1.4.7",
     "sendgrid": "~0.3.0-rc.1.8",
     "session-file-store": "0.0.18",
+    "connect-mongodb-session": "1.1.1",
     "stylus": "latest",
     "underscore": "latest"
   },

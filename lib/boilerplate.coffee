@@ -28,22 +28,38 @@ module.exports = (app)->
   
   app.use express.cookieParser()
   
+  app.set 'session_enabled', (app.get 'session_enabled') or true
   app.set 'session_db_name', (app.get 'session_db_name') or 'session'
-  
-  console.log 'session db',  (app.get 'session_db_name')
+  app.set 'session_storage', (app.get 'session_storage') or 'mongodb'
 
-  if (app.get 'session_db_name')
-    #app.use express.session secret: (app.get 'secret') or "UNSECURE-STRING", store: new MongoStore({native_parser: false})
-    store_opts =
-      url: app.get 'session_db_name'
-#if app.get('db_password')
-#      store_opts.username = app.get 'db_username'
-#      store_opts.password = app.get 'db_password'
-    
-    FileStore = require('session-file-store')(session)
-    app.use session
-      secret: (app.get 'secret') or "UNSECURE-STRING",
-      store: new FileStore(session)
+  if app.get('session_enabled') is true
+
+    # Sessions storage using FileStore
+    if app.get('session_storage') is 'filestore'
+      FileStore = require('session-file-store')(session)
+      store = new FileStore(session)
+
+    # Session storage using MongoDB
+    else if app.get('session_storage') is 'mongodb'
+      unless app.get('db_name')
+        console.log 'ERROR: mongodb session storage requires a valid db_name set in the app configs'
+      else
+        MongoDBStore = require('connect-mongodb-session')(session)
+        store_params = {
+          uri: 'mongodb://' + app.get('db_name'),
+          collection: app.get('session_db_name')
+        }
+        store = new MongoDBStore(store_params)
+
+    # Invalid session storage
+    else
+      console.log 'ERROR: Invalid session_storage:', app.get 'session_storage'
+
+    if store
+      app.use session
+        secret: (app.get 'secret') or "UNSECURE-STRING",
+        store: store
+      console.log 'Sessions are stored using', app.get 'session_storage'
 
   if app.get('csrf') is true
     app.use(express.csrf())

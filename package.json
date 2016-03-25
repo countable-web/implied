@@ -6,7 +6,7 @@
     "start": "node app",
     "test": "jasmine-node spec/"
   },
-  "repository": "https://github.com/countable/implied.git",
+  "repository": "https://github.com/countable-web/implied.git",
   "dependencies": {
     "MD5": "latest",
     "async": "latest",

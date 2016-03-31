@@ -4,10 +4,9 @@ express = require 'express'
 # Implied logging module.
 #
 module.exports = (app)->
-
   mailer = (app.get 'mailer')
 
-  if app.get 'env' is "development"
+  if (app.get 'env') is "development"
 
     app.use express.errorHandler
       dumpExceptions: true
@@ -20,7 +19,6 @@ module.exports = (app)->
   # @param opts.message {string}
   # @param callback (err)->
   prod_error = (opts, callback)->
-
     mailer.send_mail
       subject: "ERROR on " + (app.get('host') or "website") + " - " + opts.title
       from: app.get('admin_email') or "no-reply@example.com"
@@ -33,8 +31,7 @@ module.exports = (app)->
         console.error "ERROR EMAIL FAILED: ",message
         callback? "ERROR EMAIL FAILED: ",message
 
-  if app.get 'env' is "production"
-
+  if (app.get 'env') is "production"
     #app.use express.errorHandler()
     app.use (err, req, res, next)->
 

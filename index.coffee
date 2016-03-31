@@ -51,6 +51,7 @@ implied = module.exports = (app, options)->
     if app.get('port')
       (app.get 'server').listen app.get("port"), ->
         console.log "Express server listening on port " + app.get("port")
+        console.log "Server running in the #{app.get("env")} environment"
 
   app.plugin = (plugin, opts)->
 

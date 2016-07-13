@@ -68,3 +68,10 @@ me = module.exports =
       return mongojs.ObjectId result
     else
       return mongojs.ObjectId ''+inp
+
+  unique: (array)->
+    a = []
+    for val in array
+      if a.indexOf(val) == -1
+        a.push(val)
+    return a

@@ -45,7 +45,8 @@ me = module.exports = (app, opts)->
       req.session.admin = user.admin
       req.session.user = user
       req.session.user._id = user._id.toString()
-      req.session.user.group_id = user.group_id.toString()
+      if req.session.user.group_id
+        req.session.user.group_id = user.group_id.toString()
       # This user won't have to log in for a 2 weeks
       req.session.cookie.maxAge = 14 * 24 * 60 * 60 * 1000
 

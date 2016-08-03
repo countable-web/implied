@@ -283,8 +283,8 @@ me = module.exports = (app, opts)->
     app.post "/reset-password-submit", (req,res)->
       Users.findOne {email: req.body.email}, (err, user) ->
         if user
-          token = Math.random() #uuid.v4()
-          Users.update({_id:user._id}, {$set:{password_reset_token:token}})
+          token = "" + Math.random() #uuid.v4()
+          Users.update({_id: util.oid(user._id)}, {$set:{password_reset_token:token}})
           mailer?.send_mail(
               to: user.email
               subject: "Password Reset"
@@ -306,7 +306,8 @@ me = module.exports = (app, opts)->
         query = {email: req.session.email}
       else
         query = {password_reset_token: req.query.token}
-      Users.update query, {$set:{password:req.body.password}}, (err) ->
+
+      Users.update query, {$set:{password: md5(req.body.password + salt)}}, (err) ->
         if err
           flash req, 'error', 'Password reset failed'
         else

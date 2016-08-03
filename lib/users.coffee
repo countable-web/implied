@@ -307,12 +307,24 @@ me = module.exports = (app, opts)->
       else
         query = {password_reset_token: req.query.token}
 
-      Users.update query, {$set:{password: md5(req.body.password + salt)}}, (err) ->
+      Users.findOne query, (err, user) ->
+        console.log(query, user)
         if err
           flash req, 'error', 'Password reset failed'
+          goto_then req, res
+
+        if user
+          # Invalidated password reset url and reset the password
+          new_token = "" + Math.random()
+          Users.update query, {$set:{password: md5(req.body.password + salt), password_reset_token: new_token}}, (err) ->
+            if err
+              flash req, 'error', 'Password reset failed'
+            else
+              flash req, 'success', 'Password was reset'
+            goto_then req, res
         else
-          flash req, 'success', 'Password was reset'
-        goto_then req, res
+          flash req, 'error', 'Invalid password reset link'
+          goto_then req, res
 
 
     # User imitation. Allows staff to simulate other users for debugging.

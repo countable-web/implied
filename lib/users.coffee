@@ -309,7 +309,6 @@ me = module.exports = (app, opts)->
         query = {password_reset_token: req.query.token}
 
       Users.findOne query, (err, user) ->
-        console.log(query, user)
         if err
           flash req, 'error', 'Password reset failed'
           goto_then req, res

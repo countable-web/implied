@@ -17,6 +17,7 @@ class Mailer extends base.Mailer
   send_mail: (opts, callback) ->
     defaults = 
       from: @default_from
+      fromname: @default_from_name
       text: opts.body
       headers:
         'X-SMTPAPI': '{"category": '+(@app.get 'name')+'}'

@@ -6,6 +6,7 @@ class Mailer
   constructor: (app)->
     @app = app
     @default_from = (app.get 'email_default_from') or (app.get 'admin_email') or 'no-reply@example.com'
+    @default_from_name = (app.get 'email_default_from_name') or @default_from
 
   # Send an email.
   #

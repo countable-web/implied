@@ -40,7 +40,7 @@ me = module.exports = (app, opts)->
 
 
     # User succeeded in authenticating.
-    login_success = (req, user)->
+    me.login_success = (req, user)->
       req.session.email = user.email or "no email"
       req.session.admin = user.admin
       req.session.user = user
@@ -68,12 +68,16 @@ me = module.exports = (app, opts)->
       q
 
     # Generic login function, used with any HTTP based transport.
-    login = (req, callback)->
+    me.login = (req, callback)->
       # Email and password provided using any request method, GET, POST or url params.
       lookup = build_lookup_query
         username: req.param 'username'
         email: req.param 'email'
       password = req.param 'password'
+      if not password
+        callback
+          success: false
+          message: 'Please provide a password'
       query = 
         $and: [
             lookup
@@ -92,7 +96,7 @@ me = module.exports = (app, opts)->
               success: false
               message: 'Please confirm your email address before logging in.'
           else
-            login_success req, user
+            me.login_success req, user
             callback
               success: true
               user: user
@@ -103,7 +107,7 @@ me = module.exports = (app, opts)->
             message: 'Email or password incorrect.'
 
 
-    signup = (req, callback)->
+    me.signup = (req, callback)->
       
       user = {}
 
@@ -118,11 +122,12 @@ me = module.exports = (app, opts)->
       user.email = user.email.replace(" ", "").toLowerCase()
       user.confirmed = false
       user.email_confirmation_token = Math.random() #uuid.v4()
-      
-      unless user.email and user.password
+      user.password = user.password or ''
+ 
+      unless user.email
         callback
           success: false
-          message: "Please enter a username and password."
+          message: "Please enter an email address."
 
       user.password = md5(user.password + salt)
 
@@ -175,7 +180,7 @@ me = module.exports = (app, opts)->
                     success: true
                     message: 'Thanks for signing up! Please follow the instructions in your welcome email.'
                 else
-                  login_success req, user
+                  me.login_success req, user
                   callback
                     success: true
                     user: user
@@ -193,7 +198,7 @@ me = module.exports = (app, opts)->
         complete null
 
 
-    logout = (req)->
+    me.logout = (req)->
       req.session.email = null
       req.session.admin = null
       req.session.user = null
@@ -207,7 +212,7 @@ me = module.exports = (app, opts)->
     # @param password - the user's password.
     app.post "/login", (req,res) ->
 
-      login req, (result)->
+      me.login req, (result)->
 
         if result.success
           flash req, "success", result.message
@@ -218,20 +223,20 @@ me = module.exports = (app, opts)->
 
 
     app.get "/logout", (req, res) ->
-      logout req
+      me.logout req
       flash req, "success", "You've been safely logged out"
       goto_then req, res
 
 
     app.get "/logout.json", (req, res) ->
-      logout req
+      me.logout req
       res.send
         success: true
 
 
     app.post "/signup", (req, res) ->
 
-      signup req, (result)->
+      me.signup req, (result)->
 
         if result.success
           flash req, "success", result.message
@@ -244,7 +249,7 @@ me = module.exports = (app, opts)->
 
     app.get "/login.json", (req, res) ->
 
-      login req, (result)->
+      me.login req, (result)->
         res.send result
 
     
@@ -252,7 +257,7 @@ me = module.exports = (app, opts)->
 
     app.get "/signup.json", (req, res) ->
 
-      signup req, (result)->
+      me.signup req, (result)->
         res.send result
 
 
@@ -274,7 +279,7 @@ me = module.exports = (app, opts)->
           Users.findOne query, (err, user)->
             if err then throw err
             if not user then throw 'User does not exist'
-            login_success req, user
+            me.login_success req, user
             if user
               flash req, 'success', 'Email confirmed'
             goto_then req,res
@@ -331,7 +336,7 @@ me = module.exports = (app, opts)->
     # Hopefully not used for anything too devious.
     app.get "/become-user/:id", me.staff, (req,res)->
       Users.findOne {_id: util.oid(req.params.id)}, (err, user)->
-        login_success req, user
+        me.login_success req, user
         goto_then req, res
 
 

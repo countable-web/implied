@@ -64,6 +64,14 @@ implied = module.exports = function(app, options) {
    */
   (require(path.join(app.get('dir'), 'config')))(app);
   
+  // raven request handler must be first to capture stuff properly.
+  if (app.get('sentry_url')) {
+    var raven = require('raven');
+    app.set('raven', raven);
+    raven.config(app.get('sentry_url'));
+    app.use(raven.requestHandler());
+  }
+
   app.set('server', http.Server(app));
 
   process.nextTick(function() {

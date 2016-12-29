@@ -63,7 +63,9 @@ implied = module.exports = function(app, options) {
    * apply the config.
    */
   (require(path.join(app.get('dir'), 'config')))(app);
+  
   app.set('server', http.Server(app));
+
   process.nextTick(function() {
     if (app.get('port')) {
       return (app.get('server')).listen(app.get("port"), function() {
@@ -72,6 +74,7 @@ implied = module.exports = function(app, options) {
       });
     }
   });
+  
   app.plugin = function(plugin, opts) {
     var child, i, len, plugin_instance, plugin_name, registered_plugins;
     if (opts == null) {

@@ -22,7 +22,7 @@
     "stylus": "latest",
     "underscore": "latest",
     "mongodb-migrations": "0.6.0",
-    "raven": "1.*"
+    "raven": "2.*.*"
   },
   "devDependencies": {
     "vows": "^0.8.1"

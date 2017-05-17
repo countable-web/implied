@@ -70,7 +70,7 @@ implied = module.exports = function(app, options) {
   if (app.get('sentry_url')) {
     var raven = require('raven');
     app.set('raven', raven);
-    raven.config(app.get('sentry_url'));
+    raven.config(app.get('sentry_url')).install();
     app.use(raven.requestHandler());
   }
 

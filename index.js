@@ -23,6 +23,7 @@ session = require('express-session');
 
 defaults = {
   port: 3000,
+  listen: true,
   views: []
 };
 
@@ -62,20 +63,22 @@ implied = module.exports = function(app, options) {
   /*
    * apply the config.
    */
-  (require(path.join(app.get('dir'), 'config')))(app);
+  var config_filename = process.env.CONFIG_FILENAME || 'config';
+  console.log('cff', config_filename);
+  (require(path.join(app.get('dir'), config_filename)))(app);
   
   // raven request handler must be first to capture stuff properly.
   if (app.get('sentry_url')) {
     var raven = require('raven');
     app.set('raven', raven);
-    raven.config(app.get('sentry_url'));
+    raven.config(app.get('sentry_url')).install();
     app.use(raven.requestHandler());
   }
 
   app.set('server', http.Server(app));
 
   process.nextTick(function() {
-    if (app.get('port')) {
+    if (app.get('port') && options.listen) {
       return (app.get('server')).listen(app.get("port"), function() {
         console.log("Express server listening on port " + app.get("port"));
         return console.log("Server running in the " + (app.get("env")) + " environment");

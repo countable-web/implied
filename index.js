@@ -158,5 +158,6 @@ implied.logging = require('./lib/logging');
 implied.admin = require('./lib/admin');
 
 implied.sendgrid = require('./lib/mail/sendgrid');
+implied.sendgrid = require('./lib/mail/smtp');
 
 implied.cli = require('./lib/cli');

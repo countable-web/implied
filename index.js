@@ -79,8 +79,8 @@ implied = module.exports = function(app, options) {
     process.nextTick(function() {
         if (app.get('port') && options.listen) {
             return (app.get('server')).listen(app.get("port"), function() {
-                console.log("Express server listening on port " + app.get("port"));
-                return console.log("Server running in the " + (app.get("env")) + " environment");
+                console.log("Express server listening on port " + app.get("port") +
+                    " in the " + app.get("env") + " environment");
             });
         }
     });

@@ -64,7 +64,6 @@ implied = module.exports = function(app, options) {
      * apply the config.
      */
     var config_filename = process.env.CONFIG_FILENAME || 'config';
-    console.log('cff', config_filename);
     (require(path.join(app.get('dir'), config_filename)))(app);
 
     // raven request handler must be first to capture stuff properly.

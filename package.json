@@ -13,6 +13,7 @@
     "connect-mongo": "*",
     "connect-mongodb-session": "^1.4.0",
     "express": "3.*",
+    "express-formidable": "^1.0.0",
     "express-session": "~1.11.3",
     "jade": "1.6.*",
     "mongodb-migrations": "^0.8.5",

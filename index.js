@@ -148,8 +148,6 @@ implied.routing = require('./lib/routing');
 
 implied.boilerplate = require('./lib/boilerplate');
 
-implied.blog = require('./lib/blog');
-
 implied.users = require('./lib/users');
 
 implied.logging = require('./lib/logging');

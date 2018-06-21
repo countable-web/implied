@@ -22,6 +22,7 @@
     "sendgrid": "~0.3.0-rc.1.8",
     "session-file-store": "^1.2.0",
     "underscore": "latest",
+    "stylus": "latest",
     "uuid": "^3.2.1"
   },
   "devDependencies": {

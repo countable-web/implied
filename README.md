@@ -62,6 +62,12 @@ views/pages/login.jade - contains a form with an input of name "password" and "e
 views/pages/signup.jade - contains a form with an input of name "password" and "email", at least.
 views/pages/password-reset-submit.jade - contain a form with an input of name "email".
 
+### Hooks
+You can trigger something to happen when a user signs up as follows:
+
+```
+implied.on('signup', function(user){});
+```
 
 ### Sendgrid
 

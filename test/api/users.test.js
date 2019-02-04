@@ -90,6 +90,26 @@ describe("Create User non-JSON API Tests", function() {
         );      
         assert.equal(res.redirects[0], serverUrl + '/signup');  
     });
+
+
+    it("should be able to confirm user's email", function(done){
+        db.collection("users").findOne({
+            "email": sampleData.testUser.email,
+        }, async function(err, user){
+
+            let res = await request.get(serverUrl + "/confirm-email?token=" + user.email_confirmation_token);
+            assert.equal(res.redirects[0], serverUrl + '/');
+            assert.equal(res.status, 200);
+
+            let newUser = await db.collection("users").findOne({
+                "email": sampleData.testUser.email,
+            }, function(err, newUser){
+                assert.ok(newUser.confirmed)
+                done(err);
+            })
+        });
+
+    });
 });
 
 

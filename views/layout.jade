@@ -1,0 +1,53 @@
+doctype html
+html
+    head
+        title
+            block title
+                | Implied Test Server
+
+        // insertion point for extra meta tags.
+        block meta
+
+        link(rel='stylesheet',href='https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css')
+
+        script(src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js")
+
+        script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous")
+
+        link(rel='stylesheet',href='https://fonts.googleapis.com/css?family=Open+Sans:400,700|Ubuntu:400,500,700')
+
+        link(rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous")
+
+        block head
+
+    body
+
+        block nav
+            nav.navbar.navbar-light.navbar-expand-lg(style="background: #E55039;")
+                a.navbar-brand(href="/")
+                    | Implied Test
+                button.navbar-toggler(type="button" data-toggle="collapse" data-target="#navbarSupportedContent")
+                    span.navbar-toggler-icon
+                #navbarSupportedContent.collapse.navbar-collapse
+                    ul.navbar-nav.ml-auto
+                        if req.session.email
+                            li.nav-item.dropdown
+                                a.logged-in-user.nav-link.dropdown-toggle#dropdownMenuLink(data-toggle="dropdown", aria-haspopup="true")
+                                    | Hi #{req.session.email}
+                                .dropdown-menu( aria-labelledby="dropdownMenuLink")
+                                    a.dropdown-item#btn-logout(href="/logout").logout
+                                        | Log out
+                        else
+                            li.nav-item.btn
+                                a(href="/login?_then=/user/widgets")
+                                    | Login
+        .content-wrap
+            .site.messages-wrap
+                include messages
+
+            block page
+                .content.site
+                    block content
+
+
+        block footer

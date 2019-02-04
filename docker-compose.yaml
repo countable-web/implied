@@ -1,0 +1,27 @@
+version: "2"
+
+services:
+    db:
+        image: mongo:3.2
+        command: ["bash", "-c", "mongod --storageEngine wiredTiger"]
+        volumes:
+            - mongo-data-wt:/data/db
+        networks:
+            - back-tier
+
+    test:
+        build:
+            context: .
+        volumes:
+            - .:/code
+        networks:
+            - back-tier
+        command: bash -c "npm install && npm run test"
+
+volumes:
+    mongo-data-wt:
+        driver: local
+
+networks:
+    back-tier:
+        driver: bridge

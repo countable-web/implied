@@ -1,10 +1,10 @@
 {
   "name": "implied",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "desription": "Express convenience wrapper.",
   "scripts": {
     "start": "node app",
-    "test": "jasmine-node spec/"
+    "test": "node_modules/.bin/mocha ./test/**/*.test.js"
   },
   "repository": "https://github.com/countable-web/implied.git",
   "dependencies": {
@@ -14,7 +14,6 @@
     "connect-mongo": "*",
     "connect-mongodb-session": "^1.4.0",
     "express": "3.*",
-    "express-session": "~1.11.3",
     "jade": "1.6.*",
     "mongodb-migrations": "^0.8.5",
     "mongojs": "^2.6.0",
@@ -28,6 +27,8 @@
     "uuid": "^3.2.1"
   },
   "devDependencies": {
-    "vows": "^0.8.2"
+    "express-session": "^1.11.3",
+    "mocha": "^5.2.0",
+    "superagent": "^4.1.0"
   }
 }

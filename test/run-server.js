@@ -28,7 +28,6 @@ app.set("app_name", "implied-test");
 
 app.set("view engine", "jade");
 app.set("views", path.join(__dirname, '../views'));
-console.log(path.join(__dirname, '../views'))
 
 app.plugin(["mongo", "sendgrid", "boilerplate", "users", "routing", "logging"]);
 

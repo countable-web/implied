@@ -1,6 +1,6 @@
 {
   "name": "implied",
-  "version": "0.1.12",
+  "version": "0.2.11",
   "desription": "Express convenience wrapper.",
   "scripts": {
     "start": "node app",

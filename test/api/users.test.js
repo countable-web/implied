@@ -15,12 +15,6 @@ let db = mongojs(testConfig.mongoUrl);
 const testServer = require('../run-server');
 const serverUrl = 'http://' + testConfig.server.host + ":" + testConfig.server.port;
 
-beforeEach(async function(){
-    await db.collection("users").remove();
-    await db.collection("session").remove();
-});
-
-
 describe("Create User JSON API Tests", function() {
     before(async function(){
         await db.collection("users").remove();
@@ -135,6 +129,8 @@ describe("User Password Reset API Tests", function() {
     });
 
     it("should send password reset email and set password_reset_token", async function() {
+        this.timeout = 10000;
+
         let mailer = testServer.get('mailer');
         let send_mail_stub = sinon.stub(mailer, "send_mail");
         let userEmail = sampleData.testUser1.email;
@@ -147,10 +143,10 @@ describe("User Password Reset API Tests", function() {
         assert.equal(res.redirects[0], serverUrl + '/');
         assert.equal(res.status, 200);
 
-        let user = await db.collection("users").find({ 
+        let user = await db.collection("users").findOne({ 
             "email": userEmail
         });
-        passwordResetToken = user.password_reset_token
+        passwordResetToken = user.password_reset_token;
 
         assert.ok(send_mail_stub.calledOnce);
         send_mail_stub.calledWithExactly({
@@ -158,12 +154,13 @@ describe("User Password Reset API Tests", function() {
             "subject": "Password Reset",
             "body": "Go here to reset your password: http://" + (testServer.get('host')) + "/reset-password-confirm?" + user.password_reset_token
         });
-        send_mail_stub.restore();
+        console.log("verified sinonjs stub");
+        // send_mail_stub.restore();
     });
 
     it("should reset password with correct password_reset_token", async function() {
+        console.log("passwordResetToken: " + passwordResetToken);
         let res = await request.post(serverUrl + "/reset-password-confirm?email=" + sampleData.testUser1.email + "&token=" + passwordResetToken);        
-        console.log(res);
         assert.equal(res.redirects[0], serverUrl + '/');
         assert.equal(res.status, 200);
     });

@@ -1,0 +1,17 @@
+if req.session.messages
+  if req.session.messages.error
+    .alert.alert-danger.alert-dismissible.fade.show
+      dd
+        for message in req.session.messages.error
+          dt!= message
+        - delete req.session.messages.error
+      button.close(type="button", data-dismiss="alert", aria-label="Close")
+        span#messageCloseButton(aria-hidden="true") &times;
+  if req.session.messages.success
+    //.alert.alert-success.alert-dismissible.fade.show
+      dd
+        for message in req.session.messages.success
+          dt!= message
+        - delete req.session.messages.success
+      button.close(type="button", data-dismiss="alert", aria-label="Close")
+        span(aria-hidden="true") &times;

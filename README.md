@@ -46,6 +46,12 @@ app.plugin('mongo', 'boilerplate', 'sendgrid', 'users'); // choose plugins you w
 
 That's it! Your app should be live at `localhost:3000`
 
+## Testing
+
+Our testing enivronment uses docker for setup and configuration
+
+To run tests, run this command
+`docker-compose up`
 
 ## Configuration
 

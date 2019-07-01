@@ -1,0 +1,14 @@
+version: "2"
+
+services:
+    db:
+        image: mongo:3.2
+#        command: ["bash", "-c", "mongod --storageEngine wiredTiger"]
+
+    test:
+        build:
+            context: .
+        volumes:
+            - .:/code
+        command: bash -c "npm install && npm run test"
+

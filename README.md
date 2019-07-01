@@ -85,6 +85,12 @@ app.get('db').collection('mycollection').find({}).toArray(function(items){
 
 ```
 
+### Users
+
+The db.users collection contains all users creates by implied, as they sign up.
+
+`user.resetrequired` can be set in a document to indicate a user must reset their password before logging in.
+
 ### Boilerplate
 
 A reasonable set of defaults for express middleware, for a typical website. It includes bodyParser, cookies, sessions. If you do need extra middleware in between the default middleware (ordinally), you won't be able to use this.

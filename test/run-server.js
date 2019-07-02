@@ -10,7 +10,7 @@ process.env.CONFIG_FILENAME = testConfig.impliedConfigPath;
 
 //Start server
 let expressApp = express();
-expressApp.listen(3000);
+expressApp.listen(80);
 
 let app = implied(expressApp, {
 	listen: false

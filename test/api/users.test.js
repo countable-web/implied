@@ -13,7 +13,7 @@ let db = mongojs(testConfig.mongoUrl);
 
 //Start Test Server
 const testServer = require('../run-server');
-const serverUrl = 'http://' + testConfig.server.host + ":" + testConfig.server.port;
+const serverUrl = 'http://' + testConfig.server.host;
 
 describe("Create User JSON API Tests", function() {
     before(async function(){

@@ -22,7 +22,7 @@ session = require('express-session');
  */
 
 defaults = {
-    port: 3000,
+    port: 80,
     listen: true,
     views: []
 };

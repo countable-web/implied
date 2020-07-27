@@ -16,7 +16,7 @@
     "express": "3.*",
     "jade": "1.6.*",
     "mongodb-migrations": "^0.8.5",
-    "mongojs": "github:countable/mongojs",
+    "mongojs": "^2.6.0",
     "nodemailer": "^4.6.7",
     "raven": "^2.6.2",
     "request": "^2.88.0",
